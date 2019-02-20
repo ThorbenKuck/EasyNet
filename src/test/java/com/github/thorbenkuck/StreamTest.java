@@ -1,27 +1,30 @@
 package com.github.thorbenkuck;
 
-import com.github.thorbenkuck.network.stream.SimpleEventStream;
-import com.github.thorbenkuck.network.stream.SimpleSubscription;
+import com.github.thorbenkuck.network.stream.StriktEventStream;
+import com.github.thorbenkuck.network.stream.Subscription;
 import com.github.thorbenkuck.network.stream.WritableEventStream;
+import com.github.thorbenkuck.network.stream.exception.EmptySubscriberListException;
 
 public class StreamTest {
 
 	public static void main(String[] args) {
-		WritableEventStream<TestObject> stream = new SimpleEventStream<>();
-		SimpleSubscription<TestObject> subscription = new SimpleSubscription<>(System.out::println);
+		WritableEventStream<TestObject> stream = new StriktEventStream<>();
+		Subscription subscription = stream.subscribe(System.out::println);
 		subscription.setOnCancel(() -> System.out.println("Canceled"));
 
-		subscription.connect(stream);
-
 		System.out.println(stream.getSubscriptions());
-		System.out.println(subscription.prettyPrint());
 
 		stream.push(new TestObject());
+		stream.push(new TestObject2());
 		subscription.cancel();
-		stream.push(new TestObject());
+		try {
+			stream.push(new TestObject());
+		} catch (EmptySubscriberListException e) {
+			e.printStackTrace(System.out);
+		}
+	}
 
-		System.out.println(stream.getSubscriptions());
-		System.out.println(subscription.prettyPrint());
+	private static final class TestObject2 extends TestObject {
 	}
 
 }

@@ -1,13 +1,13 @@
 package com.github.thorbenkuck.network;
 
-import com.github.thorbenkuck.network.connection.Connection;
+import com.github.thorbenkuck.network.connection.ConnectionContext;
 
 public final class RemoteMessage {
 
 	private final Object dataObject;
-	private final Connection connection;
+	private final ConnectionContext connection;
 
-	public RemoteMessage(Object dataObject, Connection connection) {
+	public RemoteMessage(Object dataObject, ConnectionContext connection) {
 		this.dataObject = dataObject;
 		this.connection = connection;
 	}
@@ -16,7 +16,7 @@ public final class RemoteMessage {
 		return dataObject;
 	}
 
-	public Connection getConnection() {
+	public ConnectionContext getContext() {
 		return connection;
 	}
 }

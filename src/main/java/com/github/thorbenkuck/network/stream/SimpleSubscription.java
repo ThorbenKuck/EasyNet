@@ -3,36 +3,24 @@ package com.github.thorbenkuck.network.stream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimpleSubscription<T> implements ConcreteSubscription<T> {
+class SimpleSubscription<T> implements ConcreteSubscription<T> {
 
 	private final Subscriber<T> subscriber;
-	private final List<Throwable> throwableList = new ArrayList<>();
+	private final List<Throwable> throwableBuffer = new ArrayList<>();
 	private final Object lock = new Object();
 	private final Object cancelLock = new Object();
-	private final Object subscriptionLock = new Object();
-	private List<ConcreteSubscription<? super T>> subscriptions;
+	private final Object referenceLock = new Object();
+	private Reference<ConcreteSubscription<T>> reference;
 	private Runnable onCancel;
 
-	public SimpleSubscription(Subscriber<T> subscriber, List<ConcreteSubscription<? super T>> subscriptions) {
+	SimpleSubscription(Subscriber<T> subscriber, Reference<ConcreteSubscription<T>> reference) {
 		this.subscriber = subscriber;
-		this.subscriptions = subscriptions;
-	}
-
-	public SimpleSubscription(Subscriber<T> subscriber) {
-		this.subscriber = subscriber;
+		this.reference = reference;
 	}
 
 	private void addThrowable(Throwable throwable) {
-		synchronized (throwableList) {
-			throwableList.add(throwable);
-		}
-	}
-
-	@Override
-	public void connect(EventStream<T> eventStream) {
-		eventStream.addSubscription(this);
-		synchronized (subscriptionLock) {
-			this.subscriptions = eventStream.getSubscriptions();
+		synchronized (throwableBuffer) {
+			throwableBuffer.add(throwable);
 		}
 	}
 
@@ -43,6 +31,7 @@ public class SimpleSubscription<T> implements ConcreteSubscription<T> {
 				try {
 					subscriber.accept(t);
 				} catch (Throwable throwable) {
+					throwable.printStackTrace();
 					addThrowable(throwable);
 				}
 			}
@@ -51,8 +40,8 @@ public class SimpleSubscription<T> implements ConcreteSubscription<T> {
 
 	@Override
 	public boolean isCanceled() {
-		synchronized (subscriptionLock) {
-			return !subscriptions.contains(this);
+		synchronized (referenceLock) {
+			return reference != null && !reference.contains(this);
 		}
 	}
 
@@ -61,10 +50,10 @@ public class SimpleSubscription<T> implements ConcreteSubscription<T> {
 		if (isCanceled()) {
 			return;
 		}
-		synchronized (lock) {
-			synchronized (subscriptionLock) {
-				subscriptions.remove(this);
-				subscriptions = null;
+		synchronized (referenceLock) {
+			if (reference != null) {
+				reference.remove(this);
+				reference = null;
 			}
 		}
 
@@ -88,40 +77,27 @@ public class SimpleSubscription<T> implements ConcreteSubscription<T> {
 	}
 
 	@Override
-	public List<Throwable> drainEncounteredErrors() {
+	public List<Throwable> drainEncountered() {
 		List<Throwable> toReturn;
-		synchronized (throwableList) {
-			toReturn = new ArrayList<>(throwableList);
+		synchronized (throwableBuffer) {
+			toReturn = new ArrayList<>(throwableBuffer);
 		}
-		throwableList.clear();
+		throwableBuffer.clear();
 		return toReturn;
 	}
 
 	@Override
 	public boolean hasEncounteredErrors() {
-		synchronized (throwableList) {
-			return !throwableList.isEmpty();
+		synchronized (throwableBuffer) {
+			return !throwableBuffer.isEmpty();
 		}
 	}
 
 	@Override
 	public String toString() {
-		final StringBuffer sb = new StringBuffer("SimpleSubscription{");
-		sb.append("subscriber=").append(subscriber);
-		sb.append(", throwableList=").append(throwableList);
-		sb.append(", onCancel=").append(onCancel);
-		sb.append('}');
-		return sb.toString();
-	}
-
-	@Override
-	public String prettyPrint() {
-		final StringBuffer sb = new StringBuffer("SimpleSubscription{");
-		sb.append("subscriber=").append(subscriber);
-		sb.append(", throwableList=").append(throwableList);
-		sb.append(", onCancel=").append(onCancel);
-		sb.append(", subscriptions=").append(subscriptions);
-		sb.append('}');
-		return sb.toString();
+		return "SimpleSubscription{" + "subscriber=" + subscriber +
+				", throwableBuffer=" + throwableBuffer +
+				", onCancel=" + onCancel +
+				'}';
 	}
 }

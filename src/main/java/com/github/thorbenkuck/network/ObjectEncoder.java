@@ -1,7 +1,9 @@
 package com.github.thorbenkuck.network;
 
-import java.util.function.Function;
+import com.github.thorbenkuck.network.exceptions.FailedEncodingException;
 
-public interface ObjectEncoder extends Function<Object, byte[]> {
+public interface ObjectEncoder {
+
+	byte[] apply(Object object) throws FailedEncodingException;
 
 }

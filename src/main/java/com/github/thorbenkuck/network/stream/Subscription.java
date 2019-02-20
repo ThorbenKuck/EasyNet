@@ -2,7 +2,7 @@ package com.github.thorbenkuck.network.stream;
 
 import java.util.List;
 
-public interface Subscription<T> {
+public interface Subscription {
 
 	boolean isCanceled();
 
@@ -10,7 +10,7 @@ public interface Subscription<T> {
 
 	void setOnCancel(Runnable runnable);
 
-	List<Throwable> drainEncounteredErrors();
+	List<Throwable> drainEncountered();
 
 	boolean hasEncounteredErrors();
 

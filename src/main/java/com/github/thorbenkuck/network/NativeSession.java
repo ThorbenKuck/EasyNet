@@ -2,7 +2,6 @@ package com.github.thorbenkuck.network;
 
 import com.github.thorbenkuck.network.connection.Connection;
 
-import java.io.IOException;
 import java.util.function.Function;
 
 public class NativeSession implements Session {
@@ -19,11 +18,7 @@ public class NativeSession implements Session {
 
 	@Override
 	public void send(Object o) {
-		try {
-			connection.write(convert.apply(o));
-		} catch (IOException e) {
-			throw new IllegalStateException(e);
-		}
+		connection.input().push(convert.apply(o));
 	}
 
 	@Override

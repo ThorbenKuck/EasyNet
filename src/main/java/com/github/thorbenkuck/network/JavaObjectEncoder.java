@@ -1,18 +1,27 @@
 package com.github.thorbenkuck.network;
 
-import java.io.*;
+import com.github.thorbenkuck.network.exceptions.FailedEncodingException;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 
 public class JavaObjectEncoder implements ObjectEncoder {
+
 	@Override
-	public byte[] apply(Object o) {
+	public byte[] apply(Object o) throws FailedEncodingException {
 		try (ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
 			 ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteOutputStream)) {
 			objectOutputStream.writeObject(o);
 			objectOutputStream.flush();
 			return byteOutputStream.toByteArray();
 		} catch (IOException e) {
-			e.printStackTrace();
-			return new byte[0];
+			throw new FailedEncodingException(e);
 		}
+	}
+
+	@Override
+	public String toString() {
+		return "JavaObjectEncoder{}";
 	}
 }

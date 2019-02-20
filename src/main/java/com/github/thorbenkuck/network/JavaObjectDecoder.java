@@ -1,5 +1,7 @@
 package com.github.thorbenkuck.network;
 
+import com.github.thorbenkuck.network.exceptions.FailedDecodingException;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -7,14 +9,17 @@ import java.io.ObjectInputStream;
 
 public class JavaObjectDecoder implements ObjectDecoder {
 	@Override
-	public Object apply(byte[] bytes) {
+	public Object apply(byte[] bytes) throws FailedDecodingException {
 		try (ByteArrayInputStream byteInput = new ByteArrayInputStream(bytes);
 			 ObjectInput objectInput = new ObjectInputStream(byteInput)) {
-			Object o = objectInput.readObject();
-			return o;
+			return objectInput.readObject();
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
+			throw new FailedDecodingException(e);
 		}
-		return null;
+	}
+
+	@Override
+	public String toString() {
+		return "JavaObjectDecoder{}";
 	}
 }

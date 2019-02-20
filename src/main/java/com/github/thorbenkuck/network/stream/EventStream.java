@@ -6,10 +6,6 @@ public interface EventStream<T> {
 
 	Subscription subscribe(Subscriber<T> subscriber);
 
-	List<ConcreteSubscription<? super T>> getSubscriptions();
-
-	void addSubscription(ConcreteSubscription<? super T> subscription);
-
-	void addSubscription(Subscription<? super T> subscription);
+	List<ConcreteSubscription<T>> getSubscriptions();
 
 }

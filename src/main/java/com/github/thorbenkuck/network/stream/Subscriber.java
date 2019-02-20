@@ -3,6 +3,6 @@ package com.github.thorbenkuck.network.stream;
 @FunctionalInterface
 public interface Subscriber<T> {
 
-	void accept(T t);
+	void accept(T t) throws Exception;
 
 }

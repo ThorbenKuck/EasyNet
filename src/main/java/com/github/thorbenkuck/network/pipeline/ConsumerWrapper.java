@@ -3,11 +3,11 @@ package com.github.thorbenkuck.network.pipeline;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-class FunctionWrapper<T> implements Function<T, T> {
+class ConsumerWrapper<T> implements Function<T, T> {
 
 	private final Consumer<T> consumer;
 
-	FunctionWrapper(Consumer<T> consumer) {
+	ConsumerWrapper(Consumer<T> consumer) {
 		this.consumer = consumer;
 	}
 

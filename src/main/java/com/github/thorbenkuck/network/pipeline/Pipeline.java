@@ -1,32 +1,39 @@
 package com.github.thorbenkuck.network.pipeline;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Pipeline<T> {
 
-	private final Queue<Function> callQueue = new LinkedList<>();
+	private final List<Branch<T>> branches = new LinkedList<>();
 
-	public <S> DynamicPipelineConnection<S> add(Function<T, S> function) {
-		callQueue.add(function);
-		return new PipelineConnection<>(callQueue);
+	public <S> Stage<S> add(Function<T, S> function) {
+		Branch<T> branch = new Branch<>();
+		branches.add(branch);
+		return branch.add(function);
 	}
 
-	public DynamicPipelineConnection<T> add(Consumer<T> consumer) {
-		callQueue.add(new FunctionWrapper<>(consumer));
-		return new PipelineConnection<>(callQueue);
+	public Stage<T> add(Consumer<T> consumer) {
+		Branch<T> branch = new Branch<>();
+		branches.add(branch);
+		return branch.add(consumer);
 	}
 
-	public void run(T t) {
-		Queue<Function> copy = new LinkedList<>(callQueue);
-		Function current;
-		Object object = t;
+	public Stage<T> add(Runnable runnable) {
+		Branch<T> branch = new Branch<>();
+		branches.add(branch);
+		return branch.add(runnable);
+	}
 
-		while(copy.peek() != null) {
-			object = copy.poll().apply(object);
-		}
+	public void apply(T t) {
+		List<Branch<T>> branches = new ArrayList<>(this.branches);
+
+		branches.forEach(branch -> branch.propagate(t));
+
+		branches.clear();
 	}
 
 }

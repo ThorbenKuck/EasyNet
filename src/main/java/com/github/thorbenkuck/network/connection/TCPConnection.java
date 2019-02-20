@@ -1,45 +1,43 @@
 package com.github.thorbenkuck.network.connection;
 
-import com.github.thorbenkuck.network.RawData;
-import com.github.thorbenkuck.network.Session;
-import com.github.thorbenkuck.network.stream.EventStream;
-import com.github.thorbenkuck.network.stream.DataStream;
-import com.github.thorbenkuck.network.stream.SimpleEventStream;
-import com.github.thorbenkuck.network.stream.WritableEventStream;
+import com.github.thorbenkuck.network.DataConnection;
+import com.github.thorbenkuck.network.SizeFirstProtocol;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.function.Consumer;
+import java.net.SocketAddress;
 
-class TCPConnection implements Connection {
+class TCPConnection extends AbstractConnection {
 
-	private final Socket socket;
-	private final DataInputStream dataInputStream;
-	private final DataOutputStream dataOutputStream;
-	private final WritableEventStream<byte[]> output = new SimpleEventStream<>();
-	private final WritableEventStream<byte[]> inputStream = new SimpleEventStream<>();
 	private final ReadingService readingService = new ReadingService();
 	private final Thread thread = new Thread(readingService);
-	private Consumer<Connection> onDisconnect;
-	private Session session;
+	private final DataConnection dataConnection;
+	private final Socket socket;
 
 	TCPConnection(Socket socket) throws IOException {
+		dataConnection = DataConnection.wrap(socket);
+		setProtocol(new SizeFirstProtocol());
 		this.socket = socket;
-		this.dataInputStream = new DataInputStream(socket.getInputStream());
-		this.dataOutputStream = new DataOutputStream(socket.getOutputStream());
-		this.inputStream.subscribe(this::writeSilent);
+		socket.setKeepAlive(true);
+		pipeInputStreams();
+		systemOutput().subscribe(b -> System.out.println("[System, Receive]: " + b));
+		systemInput.subscribe(b -> System.out.println("[System, Send]: " + b));
+	}
+
+	protected synchronized void rawWrite(byte[] data) throws IOException {
+		dataConnection.write(data);
+		dataConnection.flush();
+	}
+
+	protected synchronized void write(byte[] data) throws IOException {
+		synchronized (protocolLock) {
+			getProtocol().write(data, getDataConnection());
+		}
 	}
 
 	@Override
-	public DataStream<byte[]> inputStream() {
-		return inputStream;
-	}
-
-	@Override
-	public void setSession(Session session) {
-		this.session = session;
+	public DataConnection getDataConnection() {
+		return dataConnection;
 	}
 
 	@Override
@@ -52,78 +50,42 @@ class TCPConnection implements Connection {
 	}
 
 	@Override
-	public void writeSilent(byte[] data) {
-		try {
-			write(data);
-		} catch (IOException ignored) {
-		}
-	}
-
-	@Override
-	public synchronized void write(byte[] data) throws IOException {
-		dataOutputStream.writeInt(data.length);
-		dataOutputStream.write(data);
-		dataOutputStream.flush();
-	}
-
-	@Override
-	public void writeSilent(RawData data) {
-		writeSilent(data.getBytes());
-	}
-
-	@Override
-	public synchronized void write(RawData data) throws IOException {
-		write(data.getBytes());
-	}
-
-	@Override
-	public EventStream<byte[]> outputStream() {
-		return output;
-	}
-
-	@Override
 	public void closeSilently() {
 		try {
-			socket.close();
+			super.close();
 		} catch (IOException ignored) {
 		}
-		try {
-			dataOutputStream.close();
-		} catch (IOException ignored) {
-		}
-		try {
-			dataInputStream.close();
-		} catch (IOException ignored) {
-		}
+		dataConnection.closeSilent();
 		readingService.running = false;
 	}
 
 	@Override
 	public void close() throws IOException {
+		super.close();
 		readingService.running = false;
-		socket.close();
-		dataOutputStream.close();
-		dataInputStream.close();
+		dataConnection.close();
 	}
 
 	@Override
-	public Session session() {
-		return session;
+	public SocketAddress localAddress() {
+		return socket.getLocalSocketAddress();
 	}
 
 	@Override
-	public String remoteAddress() {
-		return socket.getRemoteSocketAddress().toString();
+	public SocketAddress remoteAddress() {
+		return socket.getRemoteSocketAddress();
 	}
 
 	@Override
-	public Consumer<Connection> getOnDisconnect() {
-		return onDisconnect;
+	public boolean isOpen() {
+		return socket.isConnected();
 	}
 
 	@Override
-	public void setOnDisconnect(Consumer<Connection> onDisconnect) {
-		this.onDisconnect = onDisconnect;
+	public String toString() {
+		return "TCPConnection{" +
+				"readingService=" + readingService +
+				'}';
 	}
 
 	private final class ReadingService implements Runnable {
@@ -134,33 +96,44 @@ class TCPConnection implements Connection {
 		public void run() {
 			running = true;
 			while (socket.isConnected() && running) {
-				int size;
 				try {
-					size = dataInputStream.readInt();
-					byte[] buffer = new byte[size];
-					dataInputStream.readFully(buffer);
-					output.push(buffer);
+					byte[] data = readFromProtocol();
+					if (data.length < 200) {
+						String potential = new String(data);
+						if (potential.toLowerCase().startsWith("sys")) {
+							systemOutput.push(potential.substring(4));
+						} else {
+							potential = null;
+							output.push(data);
+						}
+					} else {
+						output.push(data);
+					}
 					// Helping the GC to collect it!
 					// This is needed, on servers with
-					// very little heap space.
-					buffer = null;
+					// very little heap space, to
+					// squeeze the last little bit of
+					// performance out of this puppy
+					data = null;
 				} catch (IOException e) {
 					// EOF reached. No print needed
 					running = false;
 					closeSilently();
-				} catch (IllegalStateException e) {
-					e.printStackTrace();
+				} catch (IllegalStateException ignored) {
 				} catch (Throwable throwable) {
-					throwable.printStackTrace();
-					writeSilent("!ACCESS DENIED!".getBytes());
+					acceptError(throwable);
 				}
 			}
 
 			running = false;
-			Consumer<Connection> onDisconnect = getOnDisconnect();
-			if (onDisconnect != null) {
-				onDisconnect.accept(TCPConnection.this);
-			}
+			disconnectEvent();
+		}
+
+		@Override
+		public String toString() {
+			return "ReadingService {" +
+					"running=" + running +
+					'}';
 		}
 	}
 }
