@@ -1,4 +1,4 @@
-package com.github.thorbenkuck.network;
+package com.github.thorbenkuck.network.connection;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,6 +28,7 @@ class SocketChannelDataConnection implements DataConnection {
 
 	@Override
 	public void flush() throws IOException {
+		// This is not needed nor possible
 	}
 
 	@Override

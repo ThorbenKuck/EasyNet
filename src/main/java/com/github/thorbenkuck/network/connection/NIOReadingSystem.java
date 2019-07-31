@@ -10,17 +10,24 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-class NIOReadingSystem {
+public class NIOReadingSystem {
 
 	private static NIOReadingSystem instance;
 	private final NonBlockingReadingService readingService = new NonBlockingReadingService();
 	private final Map<SocketChannel, NonBlockingConnection> mapping = new HashMap<>();
+	private static AtomicBoolean implicitShutdown = new AtomicBoolean(true);
+
+	public static void setImplicitShutdown(boolean b) {
+		implicitShutdown.set(b);
+	}
+
+	public static void shutdownNow() {
+		getInstance().readingService.shutdown();
+	}
 
 	private NIOReadingSystem() {
-		Thread nioListenerThread = new Thread(readingService);
-		nioListenerThread.setName("TCP Listener (NonBlocking)");
-		nioListenerThread.start();
 	}
 
 	static NIOReadingSystem getInstance() {
@@ -51,17 +58,34 @@ class NIOReadingSystem {
 		}
 	}
 
+	private void remove(SocketChannel socketChannel) {
+		synchronized (mapping) {
+			mapping.remove(socketChannel);
+		}
+	}
+
 	void unregister(SocketChannel socketChannel) {
 		SelectionKey key = socketChannel.keyFor(readingService.readingSelector);
 
 		if (key != null) {
 			key.cancel();
 		}
+
+		remove(socketChannel);
+
+		if (implicitShutdown.get() && mapping.size() == 0) {
+			readingService.shutdown();
+		}
 	}
 
-	void registerForReading(SocketChannel socketChannel, NonBlockingConnection connection) {
+	void register(SocketChannel socketChannel, NonBlockingConnection connection) {
 		set(socketChannel, connection);
 		readingService.append(socketChannel);
+		if (mapping.size() == 1) {
+			Thread nioListenerThread = new Thread(readingService);
+			nioListenerThread.setName("TCP Listener (NonBlocking)");
+			nioListenerThread.start();
+		}
 	}
 
 	private final class NonBlockingReadingService implements Runnable {
@@ -92,11 +116,18 @@ class NIOReadingSystem {
 
 		@Override
 		public void run() {
+			if (running) {
+				return;
+			}
 			SelectionKey key;
 			running = true;
 			while (running) {
 				try {
 					readingSelector.select();
+
+					if (!running) {
+						break;
+					}
 
 					Set<SelectionKey> selectedKeys = readingSelector.selectedKeys();
 					Iterator<SelectionKey> iterator = selectedKeys.iterator();
@@ -116,8 +147,20 @@ class NIOReadingSystem {
 							if (nonBlockingConnection == null) {
 								System.err.println("No Connection found for " + channel);
 							} else {
-								byte[] data = nonBlockingConnection.readFromProtocol();
-								nonBlockingConnection.received(data);
+								if (!channel.isConnected() || !channel.isOpen()) {
+									nonBlockingConnection.closeSilently();
+								} else {
+									try {
+										byte[] data = nonBlockingConnection.readFromProtocol();
+										if (data.length == 0) {
+											nonBlockingConnection.closeSilently();
+										} else {
+											nonBlockingConnection.received(data);
+										}
+									} catch (IOException e) {
+										nonBlockingConnection.closeSilently();
+									}
+								}
 							}
 						}
 					}
@@ -127,6 +170,11 @@ class NIOReadingSystem {
 					e.printStackTrace();
 				}
 			}
+		}
+
+		void shutdown() {
+			running = false;
+			readingSelector.wakeup();
 		}
 
 		void append(SocketChannel socketChannel) {

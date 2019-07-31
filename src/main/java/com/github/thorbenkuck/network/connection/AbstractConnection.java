@@ -1,8 +1,5 @@
 package com.github.thorbenkuck.network.connection;
 
-import com.github.thorbenkuck.network.DataConnection;
-import com.github.thorbenkuck.network.Protocol;
-import com.github.thorbenkuck.network.SizeFirstProtocol;
 import com.github.thorbenkuck.network.stream.DataStream;
 import com.github.thorbenkuck.network.stream.EventStream;
 import com.github.thorbenkuck.network.stream.NativeEventStream;
@@ -29,16 +26,21 @@ public abstract class AbstractConnection implements Connection {
 		systemInput.subscribe(s -> silentWrite(("sys " + s).getBytes()));
 	}
 
-	protected abstract void write(byte[] bytes) throws IOException;
+	protected void write(byte[] bytes) throws IOException {
+		writeToProtocol(bytes);
+	}
+
+	protected void rawWrite(byte[] bytes) throws IOException {
+		getDataConnection().write(bytes);
+		getDataConnection().flush();
+	}
 
 	protected void silentWrite(byte[] bytes) {
 		try {
-			write(bytes);
+			writeToProtocol(bytes);
 		} catch (IOException ignored) {
 		}
 	}
-
-	protected abstract void rawWrite(byte[] bytes) throws IOException;
 
 	protected void silentRawWrite(byte[] bytes) {
 		try {
@@ -125,8 +127,8 @@ public abstract class AbstractConnection implements Connection {
 
 	@Override
 	public void close() throws IOException {
-		output.cut();
-		input.cut();
+		output.close();
+		input.close();
 	}
 
 	@Override

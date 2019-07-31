@@ -1,10 +1,10 @@
 package com.github.thorbenkuck.network.stream;
 
-public interface WritableEventStream<T> extends EventStream<T>, DataStream<T> {
+public interface WritableEventStream<T> extends DataStream<T> {
+
+	void close();
 
 	void pause();
-
-	void cut();
 
 	void unPause();
 

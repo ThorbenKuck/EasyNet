@@ -3,17 +3,17 @@ package com.github.thorbenkuck.network.stream;
 import java.util.ArrayList;
 import java.util.List;
 
-class SimpleSubscription<T> implements ConcreteSubscription<T> {
+class SimpleSubscription<T> implements NotifiableSubscription<T> {
 
 	private final Subscriber<T> subscriber;
 	private final List<Throwable> throwableBuffer = new ArrayList<>();
 	private final Object lock = new Object();
 	private final Object cancelLock = new Object();
 	private final Object referenceLock = new Object();
-	private Reference<ConcreteSubscription<T>> reference;
+	private Reference<NotifiableSubscription<T>> reference;
 	private Runnable onCancel;
 
-	SimpleSubscription(Subscriber<T> subscriber, Reference<ConcreteSubscription<T>> reference) {
+	SimpleSubscription(Subscriber<T> subscriber, Reference<NotifiableSubscription<T>> reference) {
 		this.subscriber = subscriber;
 		this.reference = reference;
 	}

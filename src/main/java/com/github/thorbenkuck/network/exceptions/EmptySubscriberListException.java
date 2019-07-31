@@ -1,4 +1,4 @@
-package com.github.thorbenkuck.network.stream.exception;
+package com.github.thorbenkuck.network.exceptions;
 
 public class EmptySubscriberListException extends RuntimeException {
 

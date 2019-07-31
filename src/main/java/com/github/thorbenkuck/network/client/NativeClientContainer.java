@@ -1,8 +1,12 @@
 package com.github.thorbenkuck.network.client;
 
-import com.github.thorbenkuck.network.*;
+import com.github.thorbenkuck.network.RemoteMessage;
 import com.github.thorbenkuck.network.connection.Connection;
 import com.github.thorbenkuck.network.connection.ConnectionContext;
+import com.github.thorbenkuck.network.encoding.JavaObjectDecoder;
+import com.github.thorbenkuck.network.encoding.JavaObjectEncoder;
+import com.github.thorbenkuck.network.encoding.ObjectDecoder;
+import com.github.thorbenkuck.network.encoding.ObjectEncoder;
 import com.github.thorbenkuck.network.exceptions.FailedDecodingException;
 import com.github.thorbenkuck.network.exceptions.FailedEncodingException;
 import com.github.thorbenkuck.network.stream.*;
@@ -23,15 +27,17 @@ class NativeClientContainer implements ClientContainer {
 	private final List<ClientContainer> connected = new ArrayList<>();
 	private final String address;
 	private final int port;
+	private final ClientConnectionFactory factory;
 	private ObjectEncoder objectEncoder = new JavaObjectEncoder();
 	private ObjectDecoder objectDecoder = new JavaObjectDecoder();
 	private String id;
 
 	NativeClientContainer(String address, int port, ClientConnectionFactory factory) throws IOException {
+		this.factory = factory;
 		connection = factory.create(address, port);
 		connectionContext = ConnectionContext.map(connection, this::getIdentifier, this::convert);
-		connectionContext.onDisconnect(outStream::cut);
-		connectionContext.onDisconnect(inStream::cut);
+		connectionContext.onDisconnect(outStream::close);
+		connectionContext.onDisconnect(inStream::close);
 		inStream.subscribe(this::send);
 		this.address = address;
 		this.port = port;
@@ -229,7 +235,8 @@ class NativeClientContainer implements ClientContainer {
 	}
 
 	/**
-	 * Creates a new ClientContainer, connected to the same {@link #getTargetAddress() targetAddress} and {@link #getTargetPort() targetPort}.
+	 * Creates a new ClientContainer, connected to the same {@link #getTargetAddress() targetAddress} and {@link #getTargetPort() targetPort},
+	 * holding the same {@link ClientConnectionFactory connectionFactory}
 	 * <p>
 	 * This method is structurally the same to {@link #createSub()}. It differs in the fact, that before telling the
 	 * new sub-container to listen, the postCreationConsumer is called. This can be used, if you need to register a
@@ -241,7 +248,7 @@ class NativeClientContainer implements ClientContainer {
 	 */
 	@Override
 	public ClientContainer createSub(Consumer<ClientContainer> postCreationConsumer) throws IOException {
-		ClientContainer sub = ClientContainer.open(getTargetAddress(), getTargetPort());
+		ClientContainer sub = ClientContainer.open(getTargetAddress(), getTargetPort(), factory);
 		postCreationConsumer.accept(sub);
 		append(sub);
 

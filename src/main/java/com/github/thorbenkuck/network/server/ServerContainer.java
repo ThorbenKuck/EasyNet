@@ -1,14 +1,18 @@
 package com.github.thorbenkuck.network.server;
 
-import com.github.thorbenkuck.network.ObjectDecoder;
-import com.github.thorbenkuck.network.ObjectEncoder;
 import com.github.thorbenkuck.network.RemoteMessage;
 import com.github.thorbenkuck.network.connection.ConnectionContext;
+import com.github.thorbenkuck.network.encoding.ObjectDecoder;
+import com.github.thorbenkuck.network.encoding.ObjectEncoder;
 import com.github.thorbenkuck.network.stream.EventStream;
 
 import java.io.IOException;
 
 public interface ServerContainer {
+
+	static Builder builder() {
+		return new ServerBuilder();
+	}
 
 	static ServerContainer open(int port) throws IOException {
 		return open(port, new BlockingServerConnectionFactory());

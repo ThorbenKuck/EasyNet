@@ -11,17 +11,24 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class NIOWritingSystem {
 
 	private static NIOWritingSystem instance;
 	private final WritingService writingService = new WritingService();
 	private final Map<SocketChannel, ByteBuffer> mapping = new HashMap<>();
+	private static AtomicBoolean implicitShutdown = new AtomicBoolean(true);
+
+	public static void setImplicitShutdown(boolean b) {
+		implicitShutdown.set(b);
+	}
+
+	public static void shutdownNow() {
+		getInstance().writingService.shutdown();
+	}
 
 	private NIOWritingSystem() {
-		Thread nioListenerThread = new Thread(writingService);
-		nioListenerThread.setName("TCP Writer (NonBlocking)");
-		nioListenerThread.start();
 	}
 
 	static NIOWritingSystem getInstance() {
@@ -46,10 +53,19 @@ class NIOWritingSystem {
 		if (key != null) {
 			key.cancel();
 		}
+
+		if (implicitShutdown.get() && mapping.size() == 0) {
+			writingService.shutdown();
+		}
 	}
 
 	void put(SocketChannel channel, ByteBuffer byteBuffer) {
 		mapping.put(channel, byteBuffer);
+		if (!writingService.running) {
+			Thread nioListenerThread = new Thread(writingService);
+			nioListenerThread.setName("TCP Writer (NonBlocking)");
+			nioListenerThread.start();
+		}
 		writingService.append(channel);
 	}
 
@@ -77,6 +93,11 @@ class NIOWritingSystem {
 					// we can really do about this.
 				}
 			}
+		}
+
+		void shutdown() {
+			running = false;
+			selector.wakeup();
 		}
 
 		@Override

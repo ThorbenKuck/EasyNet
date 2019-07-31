@@ -1,17 +1,17 @@
-package com.github.thorbenkuck.network;
+package com.github.thorbenkuck.network.connection;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-class DataInputConnection implements DataConnection {
+class SocketConnection implements DataConnection {
 
 	private final DataInputStream dataInput;
 	private final DataOutputStream dataOutput;
 	private final Socket socket;
 
-	DataInputConnection(Socket socket) throws IOException {
+	SocketConnection(Socket socket) throws IOException {
 		this.dataInput = new DataInputStream(socket.getInputStream());
 		this.dataOutput = new DataOutputStream(socket.getOutputStream());
 		this.socket = socket;

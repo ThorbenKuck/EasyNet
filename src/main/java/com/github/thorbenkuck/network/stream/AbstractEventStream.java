@@ -5,14 +5,14 @@ import java.util.List;
 
 public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 
-	private final List<ConcreteSubscription<T>> subscriptions = new ArrayList<>();
+	private final List<NotifiableSubscription<T>> subscriptions = new ArrayList<>();
 	private final List<T> buffer = new ArrayList<>();
 	private final EventStreamReference reference = new EventStreamReference();
 	private boolean paused = false;
 	private boolean disabled = false;
 
 	private void publish(T t) {
-		List<ConcreteSubscription<T>> copy;
+		List<NotifiableSubscription<T>> copy;
 
 		synchronized (subscriptions) {
 			copy = new ArrayList<>(subscriptions);
@@ -23,7 +23,7 @@ public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 		copy = null; // Just help the GC
 	}
 
-	protected abstract void dispatch(List<ConcreteSubscription<T>> subscriptions, T t);
+	protected abstract void dispatch(List<NotifiableSubscription<T>> subscriptions, T t);
 
 	@Override
 	public synchronized void unPause() {
@@ -38,8 +38,8 @@ public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 	}
 
 	@Override
-	public void cut() {
-		List<ConcreteSubscription<? super T>> copy;
+	public void close() {
+		List<NotifiableSubscription<? super T>> copy;
 		synchronized (subscriptions) {
 			copy = new ArrayList<>(subscriptions);
 		}
@@ -71,13 +71,13 @@ public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 
 	@Override
 	public Subscription subscribe(Subscriber<T> subscriber) {
-		ConcreteSubscription<T> subscription = new SimpleSubscription<>(subscriber, reference);
+		NotifiableSubscription<T> subscription = new SimpleSubscription<>(subscriber, reference);
 		subscriptions.add(subscription);
 		return subscription;
 	}
 
 	@Override
-	public List<ConcreteSubscription<T>> getSubscriptions() {
+	public List<NotifiableSubscription<T>> getSubscriptions() {
 		return subscriptions;
 	}
 
@@ -91,15 +91,15 @@ public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 		this.disabled = disabled;
 	}
 
-	private final class EventStreamReference implements Reference<ConcreteSubscription<T>> {
+	private final class EventStreamReference implements Reference<NotifiableSubscription<T>> {
 
 		@Override
-		public boolean contains(ConcreteSubscription<T> object) {
-			return subscriptions.contains(object);
+		public boolean contains(NotifiableSubscription<T> subscription) {
+			return subscriptions.contains(subscription);
 		}
 
 		@Override
-		public void remove(ConcreteSubscription<T> subscription) {
+		public void remove(NotifiableSubscription<T> subscription) {
 			subscriptions.remove(subscription);
 		}
 	}

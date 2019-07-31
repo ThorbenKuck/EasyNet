@@ -1,9 +1,9 @@
 package com.github.thorbenkuck.network.client;
 
-import com.github.thorbenkuck.network.ObjectDecoder;
-import com.github.thorbenkuck.network.ObjectEncoder;
 import com.github.thorbenkuck.network.RemoteMessage;
 import com.github.thorbenkuck.network.connection.ConnectionContext;
+import com.github.thorbenkuck.network.encoding.ObjectDecoder;
+import com.github.thorbenkuck.network.encoding.ObjectEncoder;
 import com.github.thorbenkuck.network.stream.DataStream;
 import com.github.thorbenkuck.network.stream.EventStream;
 
@@ -18,6 +18,10 @@ public interface ClientContainer {
 
 	static ClientContainer open(String address, int port, ClientConnectionFactory clientConnectionFactory) throws IOException {
 		return new NativeClientContainer(address, port, clientConnectionFactory);
+	}
+
+	static Builder builder() {
+		return new ClientBuilder();
 	}
 
 	String getTargetAddress();

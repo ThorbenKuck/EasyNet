@@ -1,11 +1,7 @@
 package com.github.thorbenkuck.network.connection;
 
-import com.github.thorbenkuck.network.DataConnection;
-import com.github.thorbenkuck.network.SizeFirstProtocol;
-
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 class NonBlockingConnection extends AbstractConnection {
@@ -18,37 +14,9 @@ class NonBlockingConnection extends AbstractConnection {
 		dataConnection = DataConnection.wrap(socketChannel);
 		setProtocol(new SizeFirstProtocol());
 		pipeInputStreams();
+		output.subscribe(b -> System.out.println("[Receive]: " + b));
 		systemOutput().subscribe(b -> System.out.println("[System, Receive]: " + b));
 		systemInput.subscribe(b -> System.out.println("[System, Send]: " + b));
-	}
-
-	private void validateWrite(ByteBuffer byteBuffer) {
-		if (byteBuffer.hasRemaining()) {
-			byteBuffer.compact();
-			NIOWritingSystem.getInstance().put(socketChannel, byteBuffer);
-		}
-	}
-
-	@Override
-	protected void write(byte[] bytes) throws IOException {
-		ByteBuffer buffer = ByteBuffer.allocate(4 + bytes.length)
-				.putInt(bytes.length)
-				.put(bytes);
-
-		buffer.flip();
-
-		socketChannel.write(buffer);
-		validateWrite(buffer);
-	}
-
-	@Override
-	protected void rawWrite(byte[] bytes) throws IOException {
-		ByteBuffer buffer = ByteBuffer.wrap(bytes);
-
-		buffer.flip();
-
-		socketChannel.write(buffer);
-		validateWrite(buffer);
 	}
 
 	@Override
@@ -63,7 +31,7 @@ class NonBlockingConnection extends AbstractConnection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		NIOReadingSystem.getInstance().registerForReading(socketChannel, this);
+		NIOReadingSystem.getInstance().register(socketChannel, this);
 	}
 
 	@Override
@@ -117,7 +85,7 @@ class NonBlockingConnection extends AbstractConnection {
 	}
 
 	void received(byte[] data) {
-		if (data.length < 500) {
+		if (data.length < 200) {
 			String potential = new String(data);
 			if (potential.toLowerCase().startsWith("sys")) {
 				systemOutput.push(potential.substring(4));

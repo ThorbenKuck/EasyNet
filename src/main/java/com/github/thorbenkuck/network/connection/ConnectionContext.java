@@ -1,6 +1,5 @@
 package com.github.thorbenkuck.network.connection;
 
-import com.github.thorbenkuck.network.Session;
 import com.github.thorbenkuck.network.stream.DataStream;
 import com.github.thorbenkuck.network.stream.EventStream;
 
@@ -28,8 +27,6 @@ public interface ConnectionContext {
 	String getIdentifier();
 
 	SocketAddress remoteAddress();
-
-	Session session();
 
 	Connection connection();
 

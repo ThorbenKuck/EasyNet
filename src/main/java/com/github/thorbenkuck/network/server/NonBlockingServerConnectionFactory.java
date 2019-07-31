@@ -1,6 +1,7 @@
 package com.github.thorbenkuck.network.server;
 
 import com.github.thorbenkuck.network.connection.Connection;
+import jdk.jfr.Experimental;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -8,15 +9,30 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Consumer;
 
+@Experimental
 public class NonBlockingServerConnectionFactory implements ServerConnectionFactory {
 
 	private final LinkedBlockingQueue<SocketChannel> connected = new LinkedBlockingQueue<>();
+	private final List<Consumer<SocketChannel>> connectConsumers;
+	private final List<Consumer<ServerSocketChannel>> creationConsumers;
 	private ServerSocketChannel serverSocketChannel;
 	private ConnectionListener connectionListener;
+
+	public NonBlockingServerConnectionFactory() {
+		this(new ArrayList<>(), new ArrayList<>());
+	}
+
+	public NonBlockingServerConnectionFactory(List<Consumer<SocketChannel>> connectConsumers, List<Consumer<ServerSocketChannel>> creationConsumers) {
+		this.connectConsumers = connectConsumers;
+		this.creationConsumers = creationConsumers;
+	}
 
 	@Override
 	public void listen(int port) throws IOException {
@@ -26,6 +42,7 @@ public class NonBlockingServerConnectionFactory implements ServerConnectionFacto
 		serverSocketChannel = ServerSocketChannel.open();
 		serverSocketChannel.configureBlocking(false);
 		serverSocketChannel.bind(new InetSocketAddress(port));
+		creationConsumers.forEach(consumer -> consumer.accept(serverSocketChannel));
 		connectionListener = new ConnectionListener(serverSocketChannel);
 		Thread thread = new Thread(connectionListener);
 		thread.setName("TCP Connection Listener");
@@ -39,6 +56,7 @@ public class NonBlockingServerConnectionFactory implements ServerConnectionFacto
 		}
 		try {
 			SocketChannel socketChannel = connected.take();
+			connectConsumers.forEach(consumer -> consumer.accept(socketChannel));
 			return Connection.wrap(socketChannel);
 		} catch (InterruptedException e) {
 			throw new IOException(e);

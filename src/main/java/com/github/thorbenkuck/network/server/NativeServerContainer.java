@@ -1,8 +1,12 @@
 package com.github.thorbenkuck.network.server;
 
-import com.github.thorbenkuck.network.*;
+import com.github.thorbenkuck.network.RemoteMessage;
 import com.github.thorbenkuck.network.connection.Connection;
 import com.github.thorbenkuck.network.connection.ConnectionContext;
+import com.github.thorbenkuck.network.encoding.JavaObjectDecoder;
+import com.github.thorbenkuck.network.encoding.JavaObjectEncoder;
+import com.github.thorbenkuck.network.encoding.ObjectDecoder;
+import com.github.thorbenkuck.network.encoding.ObjectEncoder;
 import com.github.thorbenkuck.network.exceptions.FailedDecodingException;
 import com.github.thorbenkuck.network.exceptions.FailedEncodingException;
 import com.github.thorbenkuck.network.stream.*;
@@ -131,13 +135,13 @@ class NativeServerContainer implements ServerContainer {
 
 	@Override
 	public void close() throws IOException {
-		outStream.cut();
+		outStream.close();
 		serverConnectionFactory.close();
 	}
 
 	@Override
 	public void closeSilently() {
-		outStream.cut();
+		outStream.close();
 
 		try {
 			serverConnectionFactory.close();

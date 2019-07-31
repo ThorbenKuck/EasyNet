@@ -1,4 +1,4 @@
-package com.github.thorbenkuck.network;
+package com.github.thorbenkuck.network.connection;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

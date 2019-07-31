@@ -6,6 +6,6 @@ public interface EventStream<T> {
 
 	Subscription subscribe(Subscriber<T> subscriber);
 
-	List<ConcreteSubscription<T>> getSubscriptions();
+	List<NotifiableSubscription<T>> getSubscriptions();
 
 }

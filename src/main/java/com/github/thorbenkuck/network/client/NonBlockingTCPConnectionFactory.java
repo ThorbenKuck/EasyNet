@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
 public class NonBlockingTCPConnectionFactory implements ClientConnectionFactory {
+
 	@Override
 	public Connection create(String address, int port) throws IOException {
 		SocketChannel socketChannel = SocketChannel.open(new InetSocketAddress(address, port));

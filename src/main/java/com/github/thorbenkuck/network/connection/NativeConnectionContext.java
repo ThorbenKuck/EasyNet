@@ -1,7 +1,5 @@
 package com.github.thorbenkuck.network.connection;
 
-import com.github.thorbenkuck.network.NativeSession;
-import com.github.thorbenkuck.network.Session;
 import com.github.thorbenkuck.network.pipeline.Branch;
 import com.github.thorbenkuck.network.stream.DataStream;
 import com.github.thorbenkuck.network.stream.EventStream;
@@ -17,11 +15,9 @@ class NativeConnectionContext implements ConnectionContext {
 	private final Supplier<String> idSupplier;
 	private final Function<Object, byte[]> convert;
 	private final Branch<ConnectionContext> mainBranch = new Branch<>();
-	private final Session session;
 
 	NativeConnectionContext(Connection connection, Supplier<String> idSupplier, Function<Object, byte[]> convert) {
 		this.connection = connection;
-		this.session = new NativeSession(connection, convert);
 		connection.setOnDisconnect(c -> mainBranch.propagate(this));
 		this.idSupplier = idSupplier;
 		this.convert = convert;
@@ -60,11 +56,6 @@ class NativeConnectionContext implements ConnectionContext {
 	@Override
 	public SocketAddress remoteAddress() {
 		return connection.remoteAddress();
-	}
-
-	@Override
-	public Session session() {
-		return session;
 	}
 
 	@Override

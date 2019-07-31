@@ -1,4 +1,4 @@
-package com.github.thorbenkuck.network;
+package com.github.thorbenkuck.network.encoding;
 
 import com.github.thorbenkuck.network.exceptions.FailedDecodingException;
 

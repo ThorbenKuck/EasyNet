@@ -1,14 +1,14 @@
 package com.github.thorbenkuck;
 
-import com.github.thorbenkuck.network.stream.StriktEventStream;
+import com.github.thorbenkuck.network.exceptions.EmptySubscriberListException;
+import com.github.thorbenkuck.network.stream.StrictEventStream;
 import com.github.thorbenkuck.network.stream.Subscription;
 import com.github.thorbenkuck.network.stream.WritableEventStream;
-import com.github.thorbenkuck.network.stream.exception.EmptySubscriberListException;
 
 public class StreamTest {
 
 	public static void main(String[] args) {
-		WritableEventStream<TestObject> stream = new StriktEventStream<>();
+		WritableEventStream<TestObject> stream = new StrictEventStream<>();
 		Subscription subscription = stream.subscribe(System.out::println);
 		subscription.setOnCancel(() -> System.out.println("Canceled"));
 

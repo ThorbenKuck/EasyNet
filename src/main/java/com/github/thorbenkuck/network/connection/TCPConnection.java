@@ -1,8 +1,5 @@
 package com.github.thorbenkuck.network.connection;
 
-import com.github.thorbenkuck.network.DataConnection;
-import com.github.thorbenkuck.network.SizeFirstProtocol;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -22,17 +19,6 @@ class TCPConnection extends AbstractConnection {
 		pipeInputStreams();
 		systemOutput().subscribe(b -> System.out.println("[System, Receive]: " + b));
 		systemInput.subscribe(b -> System.out.println("[System, Send]: " + b));
-	}
-
-	protected synchronized void rawWrite(byte[] data) throws IOException {
-		dataConnection.write(data);
-		dataConnection.flush();
-	}
-
-	protected synchronized void write(byte[] data) throws IOException {
-		synchronized (protocolLock) {
-			getProtocol().write(data, getDataConnection());
-		}
 	}
 
 	@Override
@@ -88,6 +74,19 @@ class TCPConnection extends AbstractConnection {
 				'}';
 	}
 
+	void received(byte[] data) {
+		if (data.length < 200) {
+			String potential = new String(data);
+			if (potential.toLowerCase().startsWith("sys")) {
+				systemOutput.push(potential.substring(4));
+			} else {
+				output.push(data);
+			}
+		} else {
+			output.push(data);
+		}
+	}
+
 	private final class ReadingService implements Runnable {
 
 		private boolean running = false;
@@ -98,19 +97,9 @@ class TCPConnection extends AbstractConnection {
 			while (socket.isConnected() && running) {
 				try {
 					byte[] data = readFromProtocol();
-					if (data.length < 200) {
-						String potential = new String(data);
-						if (potential.toLowerCase().startsWith("sys")) {
-							systemOutput.push(potential.substring(4));
-						} else {
-							potential = null;
-							output.push(data);
-						}
-					} else {
-						output.push(data);
-					}
+					received(data);
 					// Helping the GC to collect it!
-					// This is needed, on servers with
+					// This helps, on servers with
 					// very little heap space, to
 					// squeeze the last little bit of
 					// performance out of this puppy

@@ -1,6 +1,5 @@
 package com.github.thorbenkuck.network.connection;
 
-import com.github.thorbenkuck.network.Protocol;
 import com.github.thorbenkuck.network.stream.DataStream;
 import com.github.thorbenkuck.network.stream.EventStream;
 

@@ -6,6 +6,18 @@ import java.io.IOException;
 
 public interface ServerConnectionFactory {
 
+	static ServerConnectionFactory blocking() {
+		return new BlockingServerConnectionFactory();
+	}
+
+	static ServerConnectionFactory nonBlocking() {
+		return new NonBlockingServerConnectionFactory();
+	}
+
+	static ServerConnectionFactoryBuilder builder() {
+		return new ServerConnectionFactoryBuilder();
+	}
+
 	void listen(int port) throws IOException;
 
 	Connection getNext() throws IOException;

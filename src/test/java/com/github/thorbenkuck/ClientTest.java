@@ -1,7 +1,6 @@
 package com.github.thorbenkuck;
 
 import com.github.thorbenkuck.network.client.ClientContainer;
-import com.github.thorbenkuck.network.client.NonBlockingTCPConnectionFactory;
 
 import java.io.IOException;
 import java.util.Set;
@@ -35,7 +34,10 @@ public class ClientTest {
 
 	private static void run() throws IOException {
 		System.out.println("Starting Client1 .. ");
-		ClientContainer main = ClientContainer.open("localhost", 9999, new NonBlockingTCPConnectionFactory());
+		ClientContainer main = ClientContainer.builder()
+				.nonBlocking()
+				.build("localhost", 9999);
+
 		main.output().subscribe(o -> print("[Client1]: " + o));
 		main.onDisconnect(connection -> System.out.println("Client1 Disconnected"));
 		main.listen();
