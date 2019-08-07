@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.thorbenkuck</groupId>
     <artifactId>easy-net</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.1</version>
     <packaging>jar</packaging>
     <name>EasyNet</name>
     <properties>
@@ -42,7 +42,7 @@
         <connection>scm:git:git@github.com:ThorbenKuck/NetCom2.git</connection>
         <url>scm:git:git@github.com:ThorbenKuck/NetCom2.git</url>
         <developerConnection>scm:git:git@github.com:ThorbenKuck/NetCom2.git</developerConnection>
-        <tag>NetCom2-2.0</tag>
+        <tag>easy-net-0.1</tag>
     </scm>
 
     <build>
