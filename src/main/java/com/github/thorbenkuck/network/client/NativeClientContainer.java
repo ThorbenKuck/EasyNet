@@ -270,7 +270,6 @@ class NativeClientContainer implements ClientContainer {
 			builder.append(message).append(System.lineSeparator());
 			if (message.toLowerCase().startsWith("id")) {
 				String identifier = message.substring(3);
-				System.out.println("ID received. MyID = " + id + " requested = " + identifier);
 				if (id != null && !id.equals(identifier)) {
 					if (identifier.equals(idBuffer)) {
 						connection.systemInput().push("ok");

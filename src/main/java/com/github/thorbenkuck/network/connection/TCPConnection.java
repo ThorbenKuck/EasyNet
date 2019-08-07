@@ -17,8 +17,6 @@ class TCPConnection extends AbstractConnection {
 		this.socket = socket;
 		socket.setKeepAlive(true);
 		pipeInputStreams();
-		systemOutput().subscribe(b -> System.out.println("[System, Receive]: " + b));
-		systemInput.subscribe(b -> System.out.println("[System, Send]: " + b));
 	}
 
 	@Override

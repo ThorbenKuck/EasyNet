@@ -15,9 +15,6 @@ class NonBlockingConnection extends AbstractConnection {
 		dataConnection = DataConnection.wrap(socketChannel);
 		setProtocol(new SizeFirstProtocol());
 		pipeInputStreams();
-		output.subscribe(b -> System.out.println("[Receive]: " + Arrays.toString(b)));
-		systemOutput().subscribe(b -> System.out.println("[System, Receive]: " + b));
-		systemInput.subscribe(b -> System.out.println("[System, Send]: " + b));
 	}
 
 	@Override
@@ -72,9 +69,7 @@ class NonBlockingConnection extends AbstractConnection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println("Unregistering from ReadingService ..");
 		NIOReadingSystem.getInstance().unregister(socketChannel);
-		System.out.println("Unregistering from WritingService ..");
 		NIOWritingSystem.getInstance().unregister(socketChannel);
 		try {
 			socketChannel.close();

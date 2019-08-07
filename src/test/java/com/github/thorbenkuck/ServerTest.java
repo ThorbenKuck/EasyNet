@@ -8,12 +8,12 @@ public class ServerTest {
 
 	public static void main(String[] args) throws Exception {
 		ServerContainer serverContainer = ServerContainer.open(9999, ServerConnectionFactory.builder()
-				.nonBlocking()
-//				.afterCreation(serverSocket -> serverSocket.setSoTimeout(0))
-//				.afterCreation(serverSocket -> serverSocket.setReuseAddress(true))
-//				.afterConnect(socket -> socket.setSoTimeout(0))
-//				.afterConnect(socket -> socket.setReuseAddress(true))
-//				.afterConnect(socket -> socket.setKeepAlive(true))
+				.blocking()
+				.afterCreation(serverSocket -> serverSocket.setSoTimeout(0))
+				.afterCreation(serverSocket -> serverSocket.setReuseAddress(true))
+				.afterConnect(socket -> socket.setSoTimeout(0))
+				.afterConnect(socket -> socket.setReuseAddress(true))
+				.afterConnect(socket -> socket.setKeepAlive(true))
 				.build());
 
 		serverContainer.ingoingConnections().subscribe(context -> {

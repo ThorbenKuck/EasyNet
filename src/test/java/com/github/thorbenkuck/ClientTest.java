@@ -1,5 +1,6 @@
 package com.github.thorbenkuck;
 
+import com.github.thorbenkuck.network.WorkQueue;
 import com.github.thorbenkuck.network.client.ClientContainer;
 
 import java.io.IOException;
@@ -39,14 +40,14 @@ public class ClientTest {
 				.build("localhost", 9999);
 
 		main.output().subscribe(o -> print("[Client1]: " + o));
-		main.onDisconnect(connection -> System.out.println("Client1 Disconnected"));
+		main.onDisconnect(connection -> System.out.println("[Client1]: Disconnected"));
 		main.listen();
 		System.out.println("[OK] Client1");
 
 		System.out.println("Starting Client2 .. ");
 		ClientContainer sub = main.createSub(container -> {
 			container.output().subscribe(o -> print("[Client2]: " + o));
-			container.onDisconnect(connection -> System.out.println("Client2 Disconnected"));
+			container.onDisconnect(connection -> System.out.println("[Client2]: Disconnected"));
 		});
 		System.out.println("[OK] Client2");
 
@@ -55,7 +56,14 @@ public class ClientTest {
 		main.input().push(new TestObject());
 		sub.input().push(new TestObject());
 
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
 		main.closeSilently();
+		WorkQueue.shutdown();
 
 		Thread closer = new Thread(() -> {
 			try {

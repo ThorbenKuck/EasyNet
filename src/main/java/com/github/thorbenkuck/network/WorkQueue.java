@@ -15,11 +15,13 @@ public class WorkQueue {
         }
     }
 
+    public static void shutdown() {
+        threadPool.shutdownNow();
+    }
+
     public static void append(Runnable runnable) {
         try {
-            System.out.println("Putting new Task ..");
             tasks.put(runnable);
-            System.out.println("New Task submitted!");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -36,18 +38,14 @@ public class WorkQueue {
         @Override
         public void run() {
             running = true;
-            System.out.println("Started ..");
             while (running) {
                 try {
-                    System.out.println("Taking next task ..");
                     Runnable take = tasks.take();
                     take.run();
-                    System.out.println("Task done ..");
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    running = false;
                 }
             }
-            System.out.println("Stopped ..");
         }
     }
 

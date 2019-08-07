@@ -175,7 +175,6 @@ class NativeServerContainer implements ServerContainer {
 		@Override
 		public void accept(String message) throws Exception {
 			stringBuilder.append(message).append(System.lineSeparator());
-			System.out.println(id + " " + message);
 			if (message.toLowerCase().equals("ok")) {
 				exit("ok", id);
 			} else if (message.toLowerCase().startsWith("request")) {
@@ -193,7 +192,6 @@ class NativeServerContainer implements ServerContainer {
 						targetContext.systemInput().push("known " + id);
 						stringBuilder.append("Requesting ").append(id).append(" for knowledge .. ");
 						String result = future.get();
-						System.out.println("{Received} " + result);
 						subscription.cancel();
 
 						if (result.toLowerCase().equals("ok")) {
