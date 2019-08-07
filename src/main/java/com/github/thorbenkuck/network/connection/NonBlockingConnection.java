@@ -3,6 +3,7 @@ package com.github.thorbenkuck.network.connection;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 
 class NonBlockingConnection extends AbstractConnection {
 
@@ -14,7 +15,7 @@ class NonBlockingConnection extends AbstractConnection {
 		dataConnection = DataConnection.wrap(socketChannel);
 		setProtocol(new SizeFirstProtocol());
 		pipeInputStreams();
-		output.subscribe(b -> System.out.println("[Receive]: " + b));
+		output.subscribe(b -> System.out.println("[Receive]: " + Arrays.toString(b)));
 		systemOutput().subscribe(b -> System.out.println("[System, Receive]: " + b));
 		systemInput.subscribe(b -> System.out.println("[System, Send]: " + b));
 	}

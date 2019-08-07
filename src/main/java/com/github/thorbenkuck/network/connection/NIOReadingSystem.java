@@ -1,5 +1,7 @@
 package com.github.thorbenkuck.network.connection;
 
+import com.github.thorbenkuck.network.WorkQueue;
+
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -150,18 +152,22 @@ public class NIOReadingSystem {
 								if (!channel.isConnected() || !channel.isOpen()) {
 									nonBlockingConnection.closeSilently();
 								} else {
+									System.out.println("Informing Connection");
 									try {
 										byte[] data = nonBlockingConnection.readFromProtocol();
 										if (data.length == 0) {
 											nonBlockingConnection.closeSilently();
 										} else {
-											nonBlockingConnection.received(data);
+											WorkQueue.append(() -> nonBlockingConnection.received(data));
 										}
 									} catch (IOException e) {
+										e.printStackTrace();
 										nonBlockingConnection.closeSilently();
 									}
 								}
 							}
+						} else {
+							System.err.println("Unknown key: " + key);
 						}
 					}
 

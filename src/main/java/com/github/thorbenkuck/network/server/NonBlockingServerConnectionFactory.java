@@ -1,7 +1,6 @@
 package com.github.thorbenkuck.network.server;
 
 import com.github.thorbenkuck.network.connection.Connection;
-import jdk.jfr.Experimental;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -16,7 +15,6 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
-@Experimental
 public class NonBlockingServerConnectionFactory implements ServerConnectionFactory {
 
 	private final LinkedBlockingQueue<SocketChannel> connected = new LinkedBlockingQueue<>();
@@ -107,12 +105,14 @@ public class NonBlockingServerConnectionFactory implements ServerConnectionFacto
 									connected.put(sc);
 								} catch (InterruptedException e) {
 									e.printStackTrace();
+									running = false;
 								}
 							}
 						}
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
+					running = false;
 				}
 			}
 
@@ -120,6 +120,7 @@ public class NonBlockingServerConnectionFactory implements ServerConnectionFacto
 				selector.close();
 			} catch (IOException e) {
 				e.printStackTrace();
+				running = false;
 			}
 		}
 	}
