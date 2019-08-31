@@ -12,7 +12,7 @@ public final class RemoteMessage {
 		this.connection = connection;
 	}
 
-	public Object getDataObject() {
+	public Object getData() {
 		return dataObject;
 	}
 

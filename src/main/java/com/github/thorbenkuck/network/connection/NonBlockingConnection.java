@@ -50,7 +50,7 @@ class NonBlockingConnection extends AbstractConnection {
 	public void close() throws IOException {
 		super.close();
 		NIOReadingSystem.getInstance().unregister(socketChannel);
-		socketChannel.close();
+		NIOWritingSystem.getInstance().unregister(socketChannel);
 	}
 
 	@Override
@@ -76,8 +76,6 @@ class NonBlockingConnection extends AbstractConnection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		disconnectEvent();
 	}
 
 	void received(byte[] data) {

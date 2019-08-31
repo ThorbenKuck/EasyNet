@@ -35,47 +35,39 @@ public class ClientTest {
 
 	private static void run() throws IOException {
 		System.out.println("Starting Client1 .. ");
-		ClientContainer main = ClientContainer.builder()
-				.nonBlocking()
-				.build("localhost", 9999);
+		try (ClientContainer main = ClientContainer.builder().nonBlocking()
+				.build("localhost", 9999)) {
 
-		main.output().subscribe(o -> print("[Client1]: " + o));
-		main.onDisconnect(connection -> System.out.println("[Client1]: Disconnected"));
-		main.listen();
-		System.out.println("[OK] Client1");
+			main.output().subscribe(o -> print("[Client1]: " + o));
+			main.onDisconnect(connection -> System.out.println("[Client1]: Disconnected"));
+			main.listen();
+			System.out.println("[OK] Client1");
 
-		System.out.println("Starting Client2 .. ");
-		ClientContainer sub = main.createSub(container -> {
-			container.output().subscribe(o -> print("[Client2]: " + o));
-			container.onDisconnect(connection -> System.out.println("[Client2]: Disconnected"));
-		});
-		System.out.println("[OK] Client2");
+			System.out.println("Starting Client2 .. ");
+			ClientContainer sub = main.createSub(container -> {
+				container.output().subscribe(o -> print("[Client2]: " + o));
+				container.onDisconnect(connection -> System.out.println("[Client2]: Disconnected"));
+			});
+			System.out.println("[OK] Client2");
 
-		printThreads();
+			printThreads();
 
-		main.input().push(new TestObject());
-		sub.input().push(new TestObject());
+			main.input().push(new TestObject());
+			sub.input().push(new TestObject());
 
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
 		}
 
-		main.closeSilently();
 		WorkQueue.shutdown();
 
 		Thread closer = new Thread(() -> {
 			try {
 				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
-			System.out.println("main=" + main);
-			System.out.println("sub=" + sub);
-			try {
-				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

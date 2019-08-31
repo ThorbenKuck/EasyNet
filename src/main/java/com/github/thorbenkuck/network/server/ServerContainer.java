@@ -8,7 +8,7 @@ import com.github.thorbenkuck.network.stream.EventStream;
 
 import java.io.IOException;
 
-public interface ServerContainer {
+public interface ServerContainer extends AutoCloseable {
 
 	static Builder builder() {
 		return new ServerBuilder();

@@ -53,7 +53,7 @@ public abstract class AbstractConnection implements Connection {
 		unknownExceptionHandler.accept(this, throwable);
 	}
 
-	protected void disconnectEvent() {
+	protected void triggerDisconnectEvent() {
 		if (onDisconnect != null) {
 			onDisconnect.accept(this);
 		}
@@ -127,6 +127,7 @@ public abstract class AbstractConnection implements Connection {
 
 	@Override
 	public void close() throws IOException {
+		triggerDisconnectEvent();
 		output.close();
 		input.close();
 	}

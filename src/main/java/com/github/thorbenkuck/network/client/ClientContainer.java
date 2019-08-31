@@ -7,10 +7,11 @@ import com.github.thorbenkuck.network.encoding.ObjectEncoder;
 import com.github.thorbenkuck.network.stream.DataStream;
 import com.github.thorbenkuck.network.stream.EventStream;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.function.Consumer;
 
-public interface ClientContainer {
+public interface ClientContainer extends AutoCloseable {
 
 	static ClientContainer open(String address, int port) throws IOException {
 		return open(address, port, new BlockingTCPConnectionFactory());

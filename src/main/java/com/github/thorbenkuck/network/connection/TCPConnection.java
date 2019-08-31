@@ -113,7 +113,7 @@ class TCPConnection extends AbstractConnection {
 			}
 
 			running = false;
-			disconnectEvent();
+			triggerDisconnectEvent();
 		}
 
 		@Override
