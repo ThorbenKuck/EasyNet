@@ -10,6 +10,8 @@
             UTF-8
         </project.build.sourceEncoding>
     </properties>
+    <url>https://github.com/ThorbenKuck/EasyNet</url>
+    <description>An EventStream driven, simple to use Client/Server framework</description>
 
     <developers>
         <developer>
