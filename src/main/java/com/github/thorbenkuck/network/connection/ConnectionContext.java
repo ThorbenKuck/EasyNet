@@ -14,7 +14,7 @@ public interface ConnectionContext {
 		return new NativeConnectionContext(connection, supplier, convert);
 	}
 
-	void send(Object o);
+    void write(Object o);
 
 	DataStream<byte[]> inputStream();
 

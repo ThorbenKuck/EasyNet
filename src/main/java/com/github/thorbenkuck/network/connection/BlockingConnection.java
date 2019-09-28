@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 
-class TCPConnection extends AbstractConnection {
+class BlockingConnection extends AbstractConnection {
 
 	private final ReadingService readingService = new ReadingService();
 	private final Thread thread = new Thread(readingService);
 	private final DataConnection dataConnection;
 	private final Socket socket;
 
-	TCPConnection(Socket socket) throws IOException {
+	BlockingConnection(Socket socket) throws IOException {
 		dataConnection = DataConnection.wrap(socket);
 		setProtocol(new SizeFirstProtocol());
 		this.socket = socket;
@@ -72,19 +72,6 @@ class TCPConnection extends AbstractConnection {
 				'}';
 	}
 
-	void received(byte[] data) {
-		if (data.length < 200) {
-			String potential = new String(data);
-			if (potential.toLowerCase().startsWith("sys")) {
-				systemOutput.push(potential.substring(4));
-			} else {
-				output.push(data);
-			}
-		} else {
-			output.push(data);
-		}
-	}
-
 	private final class ReadingService implements Runnable {
 
 		private boolean running = false;
@@ -96,12 +83,6 @@ class TCPConnection extends AbstractConnection {
 				try {
 					byte[] data = readFromProtocol();
 					received(data);
-					// Helping the GC to collect it!
-					// This helps, on servers with
-					// very little heap space, to
-					// squeeze the last little bit of
-					// performance out of this puppy
-					data = null;
 				} catch (IOException e) {
 					// EOF reached. No print needed
 					running = false;

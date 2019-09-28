@@ -9,22 +9,25 @@ import com.github.thorbenkuck.network.encoding.ObjectDecoder;
 import com.github.thorbenkuck.network.encoding.ObjectEncoder;
 import com.github.thorbenkuck.network.exceptions.FailedDecodingException;
 import com.github.thorbenkuck.network.exceptions.FailedEncodingException;
-import com.github.thorbenkuck.network.stream.*;
+import com.github.thorbenkuck.network.stream.EventStream;
+import com.github.thorbenkuck.network.stream.SimpleEventStream;
+import com.github.thorbenkuck.network.stream.Subscription;
+import com.github.thorbenkuck.network.stream.WritableEventStream;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class NativeServerContainer implements ServerContainer {
 
-	private final WritableEventStream<ConnectionContext> connected = new NativeEventStream<>();
-	private final WritableEventStream<RemoteMessage> outStream = new NativeEventStream<>();
+	private final WritableEventStream<ConnectionContext> connected = new SimpleEventStream<>();
+	private final WritableEventStream<RemoteMessage> outStream = new SimpleEventStream<>();
 	private final int port;
 	private final ServerConnectionFactory serverConnectionFactory;
 	private final AtomicBoolean accepting = new AtomicBoolean(false);
@@ -62,12 +65,13 @@ class NativeServerContainer implements ServerContainer {
 	}
 
 	private void handshake(Connection connection) {
-		final CompletableFuture<String> future = new CompletableFuture<>();
 		final String id = UUID.randomUUID().toString();
-		final Subscription temporary = connection.systemOutput().subscribe(new SetupSubscriber(id, connection, future));
-		connection.pauseOutput(true);
-		connection.listen();
+		final ServerHandshakeSubscriber serverHandshakeSubscriber = new ServerHandshakeSubscriber(id, connection, connectionMap::get);
+		final Subscription temporary = connection.systemOutput().subscribe(serverHandshakeSubscriber);
+		final Future<String> future = serverHandshakeSubscriber.future();
 
+		connection.pauseOutput();
+		connection.listen();
 		connection.systemInput().push("id " + id);
 
 		try {
@@ -80,11 +84,10 @@ class NativeServerContainer implements ServerContainer {
 				final ConnectionContext connectionContext = ConnectionContext.map(connection, () -> result, this::convert);
 				connectionMap.put(result, connectionContext);
 				connected.push(connectionContext);
-				connection.pauseOutput(false);
+				connection.unpauseOutput();
 			}
-		} catch (InterruptedException ignored) {
-		} catch (ExecutionException e) {
-			e.printStackTrace();
+		} catch (InterruptedException | ExecutionException e) {
+			connected.publishError(e);
 		} finally {
 			temporary.cancel();
 		}
@@ -103,7 +106,7 @@ class NativeServerContainer implements ServerContainer {
 				Connection connection = serverConnectionFactory.getNext();
 				executorService.submit(() -> handshake(connection));
 			} catch (IOException e) {
-				e.printStackTrace();
+				connected.publishError(e);
 			}
 		}
 	}
@@ -145,70 +148,13 @@ class NativeServerContainer implements ServerContainer {
 
 		try {
 			serverConnectionFactory.close();
-		} catch (IOException ignored) {
+		} catch (IOException e) {
+			connected.publishError(e);
 		}
 	}
 
 	@Override
 	public int getPort() {
 		return port;
-	}
-
-	private final class SetupSubscriber implements Subscriber<String> {
-
-		private final Connection connection;
-		private final CompletableFuture<String> future;
-		private final StringBuilder stringBuilder = new StringBuilder();
-		private String id;
-
-		private SetupSubscriber(String id, Connection connection, CompletableFuture<String> future) {
-			this.id = id;
-			this.connection = connection;
-			this.future = future;
-		}
-
-		private void exit(String message, String exitVal) {
-			connection.systemInput().push(message);
-			future.complete(exitVal);
-		}
-
-		@Override
-		public void accept(String message) throws Exception {
-			stringBuilder.append(message).append(System.lineSeparator());
-			if (message.toLowerCase().equals("ok")) {
-				exit("ok", id);
-			} else if (message.toLowerCase().startsWith("request")) {
-				String requested = message.substring(8);
-				if (requested.equals(id)) {
-					connection.systemInput().push("id " + id);
-				} else {
-					ConnectionContext targetContext = connectionMap.get(requested);
-					if (targetContext == null) {
-						exit("reject", stringBuilder.append("no target found").append(System.lineSeparator()).append("reject").toString());
-					} else {
-						CompletableFuture<String> future = new CompletableFuture<>();
-						Subscription subscription = targetContext.systemOutput().subscribe(future::complete);
-
-						targetContext.systemInput().push("known " + id);
-						stringBuilder.append("Requesting ").append(id).append(" for knowledge .. ");
-						String result = future.get();
-						subscription.cancel();
-
-						if (result.toLowerCase().equals("ok")) {
-							stringBuilder.append("[OK]").append(System.lineSeparator());
-							id = requested;
-							connection.systemInput().push("id " + requested);
-						} else {
-							stringBuilder.append("[ERR]").append(System.lineSeparator());
-							System.err.println("!WARN! Target( " + targetContext.remoteAddress() + ") does NOT know origin (" + connection.remoteAddress() + ")! Initializing disconnect");
-							exit("reject", stringBuilder.append("reject").toString());
-						}
-					}
-				}
-			} else {
-				System.err.println("Unknown system message " + message);
-				exit("reject", stringBuilder.append("unknown request ").append(message).append(System.lineSeparator()).append("reject").toString());
-			}
-		}
 	}
 }

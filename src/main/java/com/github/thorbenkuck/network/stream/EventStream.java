@@ -8,4 +8,8 @@ public interface EventStream<T> {
 
 	List<NotifiableSubscription<T>> getSubscriptions();
 
+    default Subscription connectTo(DataStream<? super T> eventStream) {
+        return subscribe(eventStream::push);
+    }
+
 }

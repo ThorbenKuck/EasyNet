@@ -6,6 +6,8 @@ public interface WritableEventStream<T> extends DataStream<T> {
 
 	void pause();
 
+    void publishError(Throwable throwable);
+
 	void unPause();
 
 	boolean isPaused();

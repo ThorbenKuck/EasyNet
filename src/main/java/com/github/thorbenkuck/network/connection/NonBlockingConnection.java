@@ -3,7 +3,6 @@ package com.github.thorbenkuck.network.connection;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 
 class NonBlockingConnection extends AbstractConnection {
 
@@ -75,19 +74,6 @@ class NonBlockingConnection extends AbstractConnection {
 			socketChannel.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-	}
-
-	void received(byte[] data) {
-		if (data.length < 200) {
-			String potential = new String(data);
-			if (potential.toLowerCase().startsWith("sys")) {
-				systemOutput.push(potential.substring(4));
-			} else {
-				output.push(data);
-			}
-		} else {
-			output.push(data);
 		}
 	}
 }

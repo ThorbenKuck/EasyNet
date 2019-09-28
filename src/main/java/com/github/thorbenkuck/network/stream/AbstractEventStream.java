@@ -20,10 +20,21 @@ public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 
 		dispatch(copy, t);
 		copy.clear();
-		copy = null; // Just help the GC
 	}
 
 	protected abstract void dispatch(List<NotifiableSubscription<T>> subscriptions, T t);
+
+	@Override
+	public void publishError(Throwable throwable) {
+		List<NotifiableSubscription<T>> copy;
+
+		synchronized (subscriptions) {
+			copy = new ArrayList<>(subscriptions);
+		}
+
+		copy.forEach(subscription -> subscription.notify(throwable));
+		copy.clear();
+	}
 
 	@Override
 	public synchronized void unPause() {
@@ -73,6 +84,7 @@ public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 	public Subscription subscribe(Subscriber<T> subscriber) {
 		NotifiableSubscription<T> subscription = new SimpleSubscription<>(subscriber, reference);
 		subscriptions.add(subscription);
+		subscriber.onSubscribe();
 		return subscription;
 	}
 

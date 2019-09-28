@@ -1,5 +1,7 @@
 package com.github.thorbenkuck.network.connection;
 
+import com.github.thorbenkuck.network.ThreadPools;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -62,9 +64,7 @@ class NIOWritingSystem {
 	void put(SocketChannel channel, ByteBuffer byteBuffer) {
 		mapping.put(channel, byteBuffer);
 		if (!writingService.running) {
-			Thread nioListenerThread = new Thread(writingService);
-			nioListenerThread.setName("TCP Writer (NonBlocking)");
-			nioListenerThread.start();
+            ThreadPools.runDaemonThread(writingService, "TCP Writer (NonBlocking)");
 		}
 		writingService.append(channel);
 	}

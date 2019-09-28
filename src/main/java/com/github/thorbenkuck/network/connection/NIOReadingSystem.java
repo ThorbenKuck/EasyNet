@@ -1,5 +1,6 @@
 package com.github.thorbenkuck.network.connection;
 
+import com.github.thorbenkuck.network.ThreadPools;
 import com.github.thorbenkuck.network.WorkQueue;
 
 import java.io.IOException;
@@ -84,9 +85,7 @@ public class NIOReadingSystem {
         set(socketChannel, connection);
         readingService.append(socketChannel);
         if (mapping.size() == 1) {
-            Thread nioListenerThread = new Thread(readingService);
-            nioListenerThread.setName("TCP Listener (NonBlocking)");
-            nioListenerThread.start();
+            ThreadPools.runDaemonThread(readingService, "TCP Listener (NonBlocking)");
         }
     }
 

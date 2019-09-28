@@ -30,6 +30,8 @@ public class BlockingServerConnectionFactory implements ServerConnectionFactory 
 	@Override
 	public void listen(int port) throws IOException {
 		serverSocket = new ServerSocket(port);
+        serverSocket.setReuseAddress(true);
+        serverSocket.setSoTimeout(0);
 		postCreationConsumers.forEach(consumer -> {
 			try {
 				consumer.accept(serverSocket);
@@ -42,6 +44,9 @@ public class BlockingServerConnectionFactory implements ServerConnectionFactory 
 	@Override
 	public Connection getNext() throws IOException {
 		Socket socket = serverSocket.accept();
+        socket.setSoTimeout(0);
+        socket.setReuseAddress(true);
+        socket.setKeepAlive(true);
 		postConnectConsumers.forEach(consumer -> {
 			try {
 				consumer.accept(socket);

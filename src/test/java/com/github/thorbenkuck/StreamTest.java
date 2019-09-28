@@ -14,17 +14,21 @@ public class StreamTest {
 
 		System.out.println(stream.getSubscriptions());
 
-		stream.push(new TestObject());
+        stream.push(new TestObject("message"));
 		stream.push(new TestObject2());
 		subscription.cancel();
 		try {
-			stream.push(new TestObject());
+            stream.push(new TestObject("message"));
 		} catch (EmptySubscriberListException e) {
 			e.printStackTrace(System.out);
 		}
+        System.out.println(subscription.isCanceled());
 	}
 
 	private static final class TestObject2 extends TestObject {
-	}
+        private TestObject2() {
+            super("message");
+        }
+    }
 
 }

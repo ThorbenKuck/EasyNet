@@ -1,80 +1,62 @@
 package com.github.thorbenkuck;
 
-import com.github.thorbenkuck.network.WorkQueue;
 import com.github.thorbenkuck.network.client.ClientContainer;
+import com.github.thorbenkuck.network.utils.StopWatch;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ClientTest {
 
-	private static void print(Object o) {
-		System.out.println(o);
-	}
+    private static final ExecutorService threadPool = Executors.newFixedThreadPool(10);
+    private static final String ADDRESSES = "localhost";
+    private static final int PORT = 9999;
 
-	public static void main(String[] args) throws Exception {
-//		for(int i = 0 ; i < 100 ; i++) {
-		run();
-//		}
-	}
-
-	private synchronized static void printThreads() {
-		int threadCount = 0;
-		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-		System.out.println("#################");
-		for (Thread t : threadSet) {
-			if (t.getThreadGroup() == Thread.currentThread().getThreadGroup()) {
-				System.out.println("# Thread :" + t + ":" + "state:" + t.getState());
-				++threadCount;
-			}
-		}
-		System.out.println("# Count, started by Main thread:" + threadCount);
-		System.out.println("#################");
-
-	}
-
-	private static void run() throws IOException {
-		System.out.println("Starting Client1 .. ");
-		try (ClientContainer main = ClientContainer.builder().nonBlocking()
-				.build("localhost", 9999)) {
-
-			main.output().subscribe(o -> print("[Client1]: " + o));
-			main.onDisconnect(connection -> System.out.println("[Client1]: Disconnected"));
-			main.listen();
-			System.out.println("[OK] Client1");
-
-			System.out.println("Starting Client2 .. ");
-			ClientContainer sub = main.createSub(container -> {
-				container.output().subscribe(o -> print("[Client2]: " + o));
-				container.onDisconnect(connection -> System.out.println("[Client2]: Disconnected"));
-			});
-			System.out.println("[OK] Client2");
-
-			printThreads();
-
-			main.input().push(new TestObject());
-			sub.input().push(new TestObject());
-
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
+    public static void main(String[] args) throws Exception {
+        System.out.print("Starting and Stopping 100 Clients ... ");
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
+        CountDownLatch latch = new CountDownLatch(100);
+        for (int i = 0; i < 100; i++) {
+            threadPool.submit(() -> {
+                try {
+                    run();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                stopWatch.step();
+                latch.countDown();
+            });
 		}
 
-		WorkQueue.shutdown();
+        latch.await();
+        stopWatch.stop();
+        System.out.println("OK");
+        System.out.println("Printing time");
+        stopWatch.print();
+    }
 
-		Thread closer = new Thread(() -> {
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			printThreads();
-		});
-		closer.setName("Closer");
-		closer.start();
-	}
+    private static void run() throws IOException {
+        CountDownLatch countDownLatch = new CountDownLatch(2);
+        try (ClientContainer main = ClientContainer.builder()
+                .blocking()
+                .build(ADDRESSES, PORT)) {
+            main.output().subscribe(o -> countDownLatch.countDown());
+            main.listen();
+
+            ClientContainer sub = main.createSub();
+            sub.output().subscribe(o -> countDownLatch.countDown());
+
+            main.input().push(new TestObject("Client1"));
+            sub.input().push(new TestObject("Client2"));
+
+            countDownLatch.await();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 }

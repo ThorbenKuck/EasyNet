@@ -5,7 +5,7 @@ import java.util.List;
 
 class SimpleSubscription<T> implements NotifiableSubscription<T> {
 
-	private final Subscriber<T> subscriber;
+	private Subscriber<T> subscriber;
 	private final List<Throwable> throwableBuffer = new ArrayList<>();
 	private final Object lock = new Object();
 	private final Object cancelLock = new Object();
@@ -19,8 +19,12 @@ class SimpleSubscription<T> implements NotifiableSubscription<T> {
 	}
 
 	private void addThrowable(Throwable throwable) {
-		synchronized (throwableBuffer) {
-			throwableBuffer.add(throwable);
+		try {
+			subscriber.onError(throwable);
+		} catch (Throwable e) {
+			synchronized (throwableBuffer) {
+				throwableBuffer.add(throwable);
+			}
 		}
 	}
 
@@ -39,9 +43,14 @@ class SimpleSubscription<T> implements NotifiableSubscription<T> {
 	}
 
 	@Override
+	public void notify(Throwable throwable) {
+		addThrowable(throwable);
+	}
+
+	@Override
 	public boolean isCanceled() {
 		synchronized (referenceLock) {
-			return reference != null && !reference.contains(this);
+			return subscriber == null;
 		}
 	}
 
@@ -50,21 +59,28 @@ class SimpleSubscription<T> implements NotifiableSubscription<T> {
 		if (isCanceled()) {
 			return;
 		}
-		synchronized (referenceLock) {
-			if (reference != null) {
-				reference.remove(this);
-				reference = null;
+		synchronized (lock) {
+			if (subscriber != null) {
+				subscriber.onCancel();
+				subscriber = null;
 			}
-		}
 
-		synchronized (cancelLock) {
-			if (onCancel != null) {
-				try {
-					onCancel.run();
-				} catch (Throwable t) {
-					addThrowable(t);
+			synchronized (referenceLock) {
+				if (reference != null) {
+					reference.remove(this);
+					reference = null;
 				}
-				onCancel = null;
+			}
+
+			synchronized (cancelLock) {
+				if (onCancel != null) {
+					try {
+						onCancel.run();
+					} catch (Throwable t) {
+						addThrowable(t);
+					}
+					onCancel = null;
+				}
 			}
 		}
 	}

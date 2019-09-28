@@ -24,7 +24,7 @@ class NativeConnectionContext implements ConnectionContext {
 	}
 
 	@Override
-	public void send(Object o) {
+    public void write(Object o) {
 		inputStream().push(convert.apply(o));
 	}
 

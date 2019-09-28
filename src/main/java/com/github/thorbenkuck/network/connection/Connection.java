@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 public interface Connection {
 
 	static Connection wrap(Socket socket) throws IOException {
-		return new TCPConnection(socket);
+        return new BlockingConnection(socket);
 	}
 
 	static Connection wrap(SocketChannel socketChannel) throws IOException {
@@ -54,5 +54,7 @@ public interface Connection {
 
 	void setUnknownExceptionHandler(BiConsumer<Connection, Throwable> handler);
 
-	void pauseOutput(boolean b);
+    void pauseOutput();
+
+    void unpauseOutput();
 }

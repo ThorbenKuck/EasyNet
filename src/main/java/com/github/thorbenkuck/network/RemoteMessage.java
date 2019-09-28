@@ -4,19 +4,27 @@ import com.github.thorbenkuck.network.connection.ConnectionContext;
 
 public final class RemoteMessage {
 
-	private final Object dataObject;
-	private final ConnectionContext connection;
+	private final Object data;
+	private final ConnectionContext context;
 
-	public RemoteMessage(Object dataObject, ConnectionContext connection) {
-		this.dataObject = dataObject;
-		this.connection = connection;
+	public RemoteMessage(Object data, ConnectionContext connection) {
+		this.data = data;
+		this.context = connection;
 	}
 
-	public Object getData() {
-		return dataObject;
+	public Object data() {
+		return data;
 	}
 
-	public ConnectionContext getContext() {
-		return connection;
+	public ConnectionContext context() {
+		return context;
+	}
+
+	@Override
+	public String toString() {
+		return "RemoteMessage{" +
+				"data=" + data +
+				", context=" + context +
+				'}';
 	}
 }

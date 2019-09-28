@@ -22,8 +22,8 @@ class NativeClientContainer implements ClientContainer {
 
 	private final Connection connection;
 	private final ConnectionContext connectionContext;
-	private final WritableEventStream<RemoteMessage> outStream = new NativeEventStream<>();
-	private final WritableEventStream<Object> inStream = new NativeEventStream<>();
+	private final WritableEventStream<RemoteMessage> outStream = new SimpleEventStream<>();
+	private final WritableEventStream<Object> inStream = new SimpleEventStream<>();
 	private final List<ClientContainer> connected = new ArrayList<>();
 	private final String address;
 	private final int port;
@@ -181,8 +181,8 @@ class NativeClientContainer implements ClientContainer {
 	@Override
 	public void listen() {
 		CompletableFuture<String> future = new CompletableFuture<>();
-		Subscription temporary = connection.systemOutput().subscribe(new SetupSubscriber(future));
-		connection.pauseOutput(true);
+		Subscription temporary = connection.systemOutput().subscribe(new ClientHandshakeSubscriber(future));
+		connection.pauseOutput();
 
 		connection.listen();
 
@@ -194,7 +194,7 @@ class NativeClientContainer implements ClientContainer {
 			}
 			connection.systemOutput().subscribe(this::handleSystemRequest);
 			connection.output().subscribe(this::handleReceive);
-			connection.pauseOutput(false);
+			connection.unpauseOutput();
 		} catch (InterruptedException ignored) {
 		} catch (ExecutionException e) {
 			e.printStackTrace();
@@ -255,13 +255,13 @@ class NativeClientContainer implements ClientContainer {
 		return sub;
 	}
 
-	private final class SetupSubscriber implements Subscriber<String> {
+	private final class ClientHandshakeSubscriber implements Subscriber<String> {
 
 		private final CompletableFuture<String> future;
 		private final StringBuilder builder = new StringBuilder();
 		private String idBuffer;
 
-		private SetupSubscriber(CompletableFuture<String> future) {
+		private ClientHandshakeSubscriber(CompletableFuture<String> future) {
 			this.future = future;
 		}
 
