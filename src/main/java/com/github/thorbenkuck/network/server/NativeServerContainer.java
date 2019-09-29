@@ -13,6 +13,7 @@ import com.github.thorbenkuck.network.stream.EventStream;
 import com.github.thorbenkuck.network.stream.SimpleEventStream;
 import com.github.thorbenkuck.network.stream.Subscription;
 import com.github.thorbenkuck.network.stream.WritableEventStream;
+import com.github.thorbenkuck.network.utils.PropertyUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ class NativeServerContainer implements ServerContainer {
 	private final WritableEventStream<ConnectionContext> connected = new SimpleEventStream<>();
 	private final WritableEventStream<RemoteMessage> outStream = new SimpleEventStream<>();
 	private final int port;
+    private final boolean exitOnError = PropertyUtils.exitOnError();
 	private final ServerConnectionFactory serverConnectionFactory;
 	private final AtomicBoolean accepting = new AtomicBoolean(false);
 	private final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -107,6 +109,9 @@ class NativeServerContainer implements ServerContainer {
 				executorService.submit(() -> handshake(connection));
 			} catch (IOException e) {
 				connected.publishError(e);
+                if (exitOnError) {
+                    closeSilently();
+                }
 			}
 		}
 	}
@@ -138,12 +143,14 @@ class NativeServerContainer implements ServerContainer {
 
 	@Override
 	public void close() throws IOException {
+        accepting.set(false);
 		outStream.close();
 		serverConnectionFactory.close();
 	}
 
 	@Override
 	public void closeSilently() {
+        accepting.set(false);
 		outStream.close();
 
 		try {

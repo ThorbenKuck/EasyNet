@@ -7,4 +7,10 @@ public class PropertyUtils {
 
         return Integer.parseInt(property);
     }
+
+    public static boolean exitOnError() {
+        String property = System.getProperty("easy.net.implicit.error", "false");
+
+        return Boolean.parseBoolean(property);
+    }
 }
