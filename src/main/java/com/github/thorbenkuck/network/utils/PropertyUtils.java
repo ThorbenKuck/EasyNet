@@ -13,4 +13,10 @@ public class PropertyUtils {
 
         return Boolean.parseBoolean(property);
     }
+
+    public static boolean daemonWorkerThreads() {
+        String property = System.getProperty("easy.net.worker.daemon", "false");
+
+        return Boolean.parseBoolean(property);
+    }
 }

@@ -1,5 +1,7 @@
 package com.github.thorbenkuck.network.connection;
 
+import com.github.thorbenkuck.network.utils.PropertyUtils;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -8,6 +10,7 @@ class BlockingConnection extends AbstractConnection {
 
 	private final ReadingService readingService = new ReadingService();
 	private final Thread thread = new Thread(readingService);
+    private final boolean daemon = PropertyUtils.daemonWorkerThreads();
 	private final DataConnection dataConnection;
 	private final Socket socket;
 
@@ -29,6 +32,7 @@ class BlockingConnection extends AbstractConnection {
 		if (readingService.running) {
 			return;
 		}
+        thread.setDaemon(daemon);
 		thread.setName("TCP Listener");
 		thread.start();
 	}

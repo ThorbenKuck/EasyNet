@@ -1,6 +1,7 @@
 package com.github.thorbenkuck.network.server;
 
 import com.github.thorbenkuck.network.connection.Connection;
+import com.github.thorbenkuck.network.utils.PropertyUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -20,6 +21,7 @@ public class NonBlockingServerConnectionFactory implements ServerConnectionFacto
 	private final LinkedBlockingQueue<SocketChannel> connected = new LinkedBlockingQueue<>();
 	private final List<Consumer<SocketChannel>> connectConsumers;
 	private final List<Consumer<ServerSocketChannel>> creationConsumers;
+	private final boolean daemon = PropertyUtils.daemonWorkerThreads();
 	private ServerSocketChannel serverSocketChannel;
 	private ConnectionListener connectionListener;
 
@@ -43,6 +45,7 @@ public class NonBlockingServerConnectionFactory implements ServerConnectionFacto
 		creationConsumers.forEach(consumer -> consumer.accept(serverSocketChannel));
 		connectionListener = new ConnectionListener(serverSocketChannel);
 		Thread thread = new Thread(connectionListener);
+		thread.setDaemon(daemon);
 		thread.setName("TCP Connection Listener");
 		thread.start();
 	}
