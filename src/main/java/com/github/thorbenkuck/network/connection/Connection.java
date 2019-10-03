@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public interface Connection {
@@ -51,8 +50,6 @@ public interface Connection {
 	void closeSilently();
 
 	void close() throws IOException;
-
-	void setUnknownExceptionHandler(BiConsumer<Connection, Throwable> handler);
 
     void pauseOutput();
 

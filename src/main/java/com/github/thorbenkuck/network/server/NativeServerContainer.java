@@ -10,9 +10,8 @@ import com.github.thorbenkuck.network.encoding.ObjectEncoder;
 import com.github.thorbenkuck.network.exceptions.FailedDecodingException;
 import com.github.thorbenkuck.network.exceptions.FailedEncodingException;
 import com.github.thorbenkuck.network.stream.EventStream;
-import com.github.thorbenkuck.network.stream.SimpleEventStream;
+import com.github.thorbenkuck.network.stream.ManagedEventStream;
 import com.github.thorbenkuck.network.stream.Subscription;
-import com.github.thorbenkuck.network.stream.WritableEventStream;
 import com.github.thorbenkuck.network.utils.PropertyUtils;
 
 import java.io.IOException;
@@ -27,8 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 class NativeServerContainer implements ServerContainer {
 
-	private final WritableEventStream<ConnectionContext> connected = new SimpleEventStream<>();
-	private final WritableEventStream<RemoteMessage> outStream = new SimpleEventStream<>();
+	private final ManagedEventStream<ConnectionContext> connected = ManagedEventStream.sequential();
+	private final ManagedEventStream<RemoteMessage> outStream = ManagedEventStream.sequential();
 	private final int port;
     private final boolean exitOnError = PropertyUtils.exitOnError();
 	private final ServerConnectionFactory serverConnectionFactory;
@@ -80,7 +79,7 @@ class NativeServerContainer implements ServerContainer {
 			final String result = future.get();
 			temporary.cancel();
 			if (result.toLowerCase().endsWith("reject")) {
-				System.err.println("Handshake failed!\n### Protocol-Start ###\n" + result + "### Protocol-End  ###");
+				System.err.println("Handshake failed!\n### Protocol-Start ###\n" + result + "\n### Protocol-End  ###");
 				connection.closeSilently();
 			} else {
 				final ConnectionContext connectionContext = ConnectionContext.map(connection, () -> result, this::convert);
@@ -89,7 +88,7 @@ class NativeServerContainer implements ServerContainer {
 				connection.unpauseOutput();
 			}
 		} catch (InterruptedException | ExecutionException e) {
-			connected.publishError(e);
+			connected.pushError(e);
 		} finally {
 			temporary.cancel();
 		}
@@ -101,19 +100,24 @@ class NativeServerContainer implements ServerContainer {
 	}
 
 	@Override
-	public void accept() {
+	public void acceptAll() {
 		accepting.set(true);
 		while (accepting.get()) {
 			try {
-				Connection connection = serverConnectionFactory.getNext();
+				Connection connection = acceptNext();
 				executorService.submit(() -> handshake(connection));
 			} catch (IOException e) {
-				connected.publishError(e);
-                if (exitOnError) {
-                    closeSilently();
-                }
+				connected.pushError(e);
+				if (exitOnError) {
+					closeSilently();
+				}
 			}
 		}
+	}
+
+	@Override
+	public Connection acceptNext() throws IOException {
+		return serverConnectionFactory.getNext();
 	}
 
 	@Override
@@ -156,7 +160,7 @@ class NativeServerContainer implements ServerContainer {
 		try {
 			serverConnectionFactory.close();
 		} catch (IOException e) {
-			connected.publishError(e);
+			connected.pushError(e);
 		}
 	}
 

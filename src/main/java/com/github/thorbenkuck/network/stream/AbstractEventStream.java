@@ -1,59 +1,52 @@
 package com.github.thorbenkuck.network.stream;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
+public abstract class AbstractEventStream<T> implements ManagedEventStream<T> {
 
 	private final List<NotifiableSubscription<T>> subscriptions = new ArrayList<>();
 	private final List<T> buffer = new ArrayList<>();
-	private final EventStreamReference reference = new EventStreamReference();
+	private final EventStreamSubscriptionReference reference = new EventStreamSubscriptionReference();
 	private boolean paused = false;
 	private boolean disabled = false;
 
 	private void publish(T t) {
-		List<NotifiableSubscription<T>> copy;
-
-		synchronized (subscriptions) {
-			copy = new ArrayList<>(subscriptions);
-		}
-
+		List<NotifiableSubscription<T>> copy = new ArrayList<>(subscriptions);
 		dispatch(copy, t);
-		copy.clear();
 	}
 
 	protected abstract void dispatch(List<NotifiableSubscription<T>> subscriptions, T t);
 
 	@Override
-	public void publishError(Throwable throwable) {
-		List<NotifiableSubscription<T>> copy;
+	public void clearSubscribers() {
+		ArrayList<NotifiableSubscription<T>> notifiableSubscriptions = new ArrayList<>(subscriptions);
+		notifiableSubscriptions.forEach(Subscription::cancel);
+	}
 
-		synchronized (subscriptions) {
-			copy = new ArrayList<>(subscriptions);
-		}
-
+	@Override
+	public void pushError(Throwable throwable) {
+		List<NotifiableSubscription<T>> copy = new ArrayList<>(subscriptions);
 		copy.forEach(subscription -> subscription.notify(throwable));
 		copy.clear();
 	}
 
 	@Override
-	public synchronized void unPause() {
+	public void unPause() {
 		paused = false;
 		buffer.forEach(this::publish);
 		buffer.clear();
 	}
 
 	@Override
-	public synchronized void pause() {
+	public void pause() {
 		paused = true;
 	}
 
 	@Override
 	public void close() {
-		List<NotifiableSubscription<? super T>> copy;
-		synchronized (subscriptions) {
-			copy = new ArrayList<>(subscriptions);
-		}
+		List<NotifiableSubscription<? super T>> copy = new ArrayList<>(subscriptions);
 
 		copy.forEach(Subscription::cancel);
 		buffer.clear();
@@ -90,7 +83,7 @@ public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 
 	@Override
 	public List<NotifiableSubscription<T>> getSubscriptions() {
-		return subscriptions;
+		return Collections.unmodifiableList(subscriptions);
 	}
 
 	@Override
@@ -103,7 +96,7 @@ public abstract class AbstractEventStream<T> implements WritableEventStream<T> {
 		this.disabled = disabled;
 	}
 
-	private final class EventStreamReference implements Reference<NotifiableSubscription<T>> {
+	private final class EventStreamSubscriptionReference implements SubscriptionReference<NotifiableSubscription<T>> {
 
 		@Override
 		public boolean contains(NotifiableSubscription<T> subscription) {

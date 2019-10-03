@@ -1,12 +1,21 @@
 package com.github.thorbenkuck.network.stream;
 
-import java.util.List;
-
 public interface EventStream<T> {
 
-	Subscription subscribe(Subscriber<T> subscriber);
+    static <T> EventStream<T> wrap(EventStream<T> eventStream) {
+        if (!(eventStream instanceof ManagedEventStream)) {
+            throw new IllegalArgumentException("A ManagedEventStream is required!");
+        }
+        return new DelegatingEventStream<T>((ManagedEventStream<T>) eventStream);
+    }
 
-	List<NotifiableSubscription<T>> getSubscriptions();
+    static <T> EventStream<T> readFrom(DataStream<T> dataStream) {
+        ManagedEventStream<T> managedEventStream = ManagedEventStream.sequential();
+        dataStream.subscribe(managedEventStream::push);
+        return managedEventStream;
+    }
+
+    Subscription subscribe(Subscriber<T> subscriber);
 
     default Subscription connectTo(DataStream<? super T> eventStream) {
         return subscribe(eventStream::push);

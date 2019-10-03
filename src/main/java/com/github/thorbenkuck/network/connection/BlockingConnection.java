@@ -1,5 +1,6 @@
 package com.github.thorbenkuck.network.connection;
 
+import com.github.thorbenkuck.network.ThreadPools;
 import com.github.thorbenkuck.network.utils.PropertyUtils;
 
 import java.io.IOException;
@@ -9,7 +10,7 @@ import java.net.SocketAddress;
 class BlockingConnection extends AbstractConnection {
 
 	private final ReadingService readingService = new ReadingService();
-	private final Thread thread = new Thread(readingService);
+	private final Thread thread = ThreadPools.newDaemonThread(readingService, "Blocking Connection Listener");
     private final boolean daemon = PropertyUtils.daemonWorkerThreads();
 	private final DataConnection dataConnection;
 	private final Socket socket;
@@ -43,8 +44,8 @@ class BlockingConnection extends AbstractConnection {
 			super.close();
 		} catch (IOException ignored) {
 		}
-		dataConnection.closeSilent();
 		readingService.running = false;
+		dataConnection.closeSilent();
 	}
 
 	@Override
@@ -90,6 +91,7 @@ class BlockingConnection extends AbstractConnection {
 				} catch (IOException e) {
 					// EOF reached. No print needed
 					running = false;
+					acceptError(e);
 					closeSilently();
 				} catch (IllegalStateException ignored) {
 				} catch (Throwable throwable) {

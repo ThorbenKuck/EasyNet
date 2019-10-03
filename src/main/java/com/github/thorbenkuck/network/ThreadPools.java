@@ -6,16 +6,26 @@ import java.util.concurrent.ThreadFactory;
 
 public class ThreadPools {
 
-    private static final ThreadFactory NON_DAEMON_THREAD_FACTORY = new DaemonThreadFactory();
+    private static final ThreadFactory DAEMON_THREAD_FACTORY = new DaemonThreadFactory();
 
     public static ExecutorService newDaemonThreadPool() {
-        return Executors.newCachedThreadPool(new DaemonThreadFactory("WorkQueue Task"));
+        return Executors.newCachedThreadPool(new DaemonThreadFactory());
     }
 
     public static Thread runDaemonThread(Runnable runnable, String name) {
-        Thread thread = NON_DAEMON_THREAD_FACTORY.newThread(runnable);
-        thread.setName(name);
+        Thread thread = DAEMON_THREAD_FACTORY.newThread(runnable);
+        if (name != null) {
+            thread.setName(name);
+        }
         thread.start();
+        return thread;
+    }
+
+    public static Thread newDaemonThread(Runnable runnable, String name) {
+        Thread thread = DAEMON_THREAD_FACTORY.newThread(runnable);
+        if (name != null) {
+            thread.setName(name);
+        }
         return thread;
     }
 
@@ -28,16 +38,13 @@ public class ThreadPools {
         }
 
         private DaemonThreadFactory() {
-            name = null;
+            name = "WorkQueue Task";
         }
 
         @Override
         public Thread newThread(Runnable runnable) {
             Thread thread = Executors.defaultThreadFactory().newThread(runnable);
-            if (name != null) {
-                thread.setName(name);
-                thread.setName("WorkQueue Task");
-            }
+            thread.setName(name);
             thread.setDaemon(true);
             return thread;
         }

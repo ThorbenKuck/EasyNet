@@ -25,10 +25,10 @@ class NonBlockingConnection extends AbstractConnection {
 	public void listen() {
 		try {
 			socketChannel.finishConnect();
+			NIOReadingSystem.getInstance().register(socketChannel, this);
 		} catch (IOException e) {
-			e.printStackTrace();
+			acceptError(e);
 		}
-		NIOReadingSystem.getInstance().register(socketChannel, this);
 	}
 
 	@Override
@@ -65,15 +65,13 @@ class NonBlockingConnection extends AbstractConnection {
 	public void closeSilently() {
 		try {
 			super.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException ignored) {
 		}
 		NIOReadingSystem.getInstance().unregister(socketChannel);
 		NIOWritingSystem.getInstance().unregister(socketChannel);
 		try {
 			socketChannel.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException ignored) {
 		}
 	}
 }

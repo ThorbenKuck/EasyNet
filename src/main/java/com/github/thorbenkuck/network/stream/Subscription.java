@@ -14,4 +14,6 @@ public interface Subscription {
 
 	boolean hasEncounteredErrors();
 
+	void preventErrorBuffer();
+
 }

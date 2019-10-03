@@ -1,6 +1,6 @@
 package com.github.thorbenkuck.network.exceptions;
 
-public class FailedEncodingException extends Exception {
+public class FailedEncodingException extends NetworkException {
 
 	public FailedEncodingException() {
 	}
@@ -15,9 +15,5 @@ public class FailedEncodingException extends Exception {
 
 	public FailedEncodingException(Throwable cause) {
 		super(cause);
-	}
-
-	public FailedEncodingException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
 	}
 }

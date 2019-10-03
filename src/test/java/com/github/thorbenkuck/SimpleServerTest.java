@@ -10,7 +10,7 @@ public class SimpleServerTest {
         try (ServerContainer serverContainer = ServerContainer.open(6767)) {
             serverContainer.output().subscribe(remoteMessage -> remoteMessage.context().write(remoteMessage.data()));
             serverContainer.output().subscribe(remoteMessage -> System.out.println(remoteMessage.data()));
-            serverContainer.accept();
+            serverContainer.acceptNext();
         } catch (IOException e) {
             e.printStackTrace();
         }

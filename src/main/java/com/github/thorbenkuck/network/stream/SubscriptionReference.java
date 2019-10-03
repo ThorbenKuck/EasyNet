@@ -1,6 +1,6 @@
 package com.github.thorbenkuck.network.stream;
 
-public interface Reference<T> {
+public interface SubscriptionReference<T> {
 
 	boolean contains(T object);
 

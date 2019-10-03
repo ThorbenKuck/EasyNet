@@ -1,6 +1,7 @@
 package com.github.thorbenkuck.network.server;
 
 import com.github.thorbenkuck.network.RemoteMessage;
+import com.github.thorbenkuck.network.connection.Connection;
 import com.github.thorbenkuck.network.connection.ConnectionContext;
 import com.github.thorbenkuck.network.encoding.ObjectDecoder;
 import com.github.thorbenkuck.network.encoding.ObjectEncoder;
@@ -24,7 +25,9 @@ public interface ServerContainer extends AutoCloseable {
 
 	EventStream<RemoteMessage> output();
 
-	void accept();
+	void acceptAll();
+
+	Connection acceptNext() throws IOException;
 
 	EventStream<ConnectionContext> ingoingConnections();
 

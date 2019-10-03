@@ -12,13 +12,13 @@ public class ServerTest {
         stopWatch.prepareStep("Creating Builder");
         stopWatch.prepareStep("Starting");
         stopWatch.start();
-        System.out.print("Building ... ");
+        System.out.print("Building .. ");
         ServerConnectionFactory build = ServerConnectionFactory.builder()
                 .blocking()
                 .build();
         System.out.println("OK");
         stopWatch.step();
-        System.out.print("Starting Server ... ");
+        System.out.print("Starting Server .. ");
         try (ServerContainer serverContainer = ServerContainer.open(9999, build)) {
             System.out.println("OK");
 
@@ -27,7 +27,7 @@ public class ServerTest {
             stopWatch.print();
 
             Subscription sendSubscription = serverContainer.output().subscribe(remoteMessage -> remoteMessage.context().write(remoteMessage.data()));
-            serverContainer.accept();
+            serverContainer.acceptAll();
             System.out.println("Server done. Closing");
             sendSubscription.cancel();
         }

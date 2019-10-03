@@ -7,22 +7,22 @@ class SimpleSubscription<T> implements NotifiableSubscription<T> {
 
 	private Subscriber<T> subscriber;
 	private final List<Throwable> throwableBuffer = new ArrayList<>();
-	private final Object lock = new Object();
+	private final Object mutexLock = new Object();
 	private final Object cancelLock = new Object();
-	private final Object referenceLock = new Object();
-	private Reference<NotifiableSubscription<T>> reference;
+	private boolean bufferErrors = true;
+	private SubscriptionReference<NotifiableSubscription<T>> subscriptionReference;
 	private Runnable onCancel;
 
-	SimpleSubscription(Subscriber<T> subscriber, Reference<NotifiableSubscription<T>> reference) {
+	SimpleSubscription(Subscriber<T> subscriber, SubscriptionReference<NotifiableSubscription<T>> subscriptionReference) {
 		this.subscriber = subscriber;
-		this.reference = reference;
+		this.subscriptionReference = subscriptionReference;
 	}
 
 	private void addThrowable(Throwable throwable) {
 		try {
 			subscriber.onError(throwable);
 		} catch (Throwable e) {
-			synchronized (throwableBuffer) {
+			if (bufferErrors) {
 				throwableBuffer.add(throwable);
 			}
 		}
@@ -30,7 +30,7 @@ class SimpleSubscription<T> implements NotifiableSubscription<T> {
 
 	@Override
 	public void notify(T t) {
-		synchronized (lock) {
+		synchronized (mutexLock) {
 			if (!isCanceled()) {
 				try {
 					subscriber.accept(t);
@@ -49,9 +49,7 @@ class SimpleSubscription<T> implements NotifiableSubscription<T> {
 
 	@Override
 	public boolean isCanceled() {
-		synchronized (referenceLock) {
-			return subscriber == null;
-		}
+		return subscriber == null;
 	}
 
 	@Override
@@ -59,17 +57,15 @@ class SimpleSubscription<T> implements NotifiableSubscription<T> {
 		if (isCanceled()) {
 			return;
 		}
-		synchronized (lock) {
+		synchronized (mutexLock) {
 			if (subscriber != null) {
 				subscriber.onCancel();
 				subscriber = null;
 			}
 
-			synchronized (referenceLock) {
-				if (reference != null) {
-					reference.remove(this);
-					reference = null;
-				}
+			if (subscriptionReference != null) {
+				subscriptionReference.remove(this);
+				subscriptionReference = null;
 			}
 
 			synchronized (cancelLock) {
@@ -94,19 +90,19 @@ class SimpleSubscription<T> implements NotifiableSubscription<T> {
 
 	@Override
 	public List<Throwable> drainEncountered() {
-		List<Throwable> toReturn;
-		synchronized (throwableBuffer) {
-			toReturn = new ArrayList<>(throwableBuffer);
-		}
+		List<Throwable> toReturn = new ArrayList<>(throwableBuffer);
 		throwableBuffer.clear();
 		return toReturn;
 	}
 
 	@Override
 	public boolean hasEncounteredErrors() {
-		synchronized (throwableBuffer) {
-			return !throwableBuffer.isEmpty();
-		}
+		return !throwableBuffer.isEmpty();
+	}
+
+	@Override
+	public void preventErrorBuffer() {
+		bufferErrors = false;
 	}
 
 	@Override

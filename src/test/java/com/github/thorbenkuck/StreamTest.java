@@ -1,22 +1,21 @@
 package com.github.thorbenkuck;
 
 import com.github.thorbenkuck.network.exceptions.EmptySubscriberListException;
-import com.github.thorbenkuck.network.stream.StrictEventStream;
+import com.github.thorbenkuck.network.stream.ManagedEventStream;
+import com.github.thorbenkuck.network.stream.Subscriber;
 import com.github.thorbenkuck.network.stream.Subscription;
-import com.github.thorbenkuck.network.stream.WritableEventStream;
 
 public class StreamTest {
 
 	public static void main(String[] args) {
-		WritableEventStream<TestObject> stream = new StrictEventStream<>();
-		Subscription subscription = stream.subscribe(System.out::println);
-		subscription.setOnCancel(() -> System.out.println("Canceled"));
-
-		System.out.println(stream.getSubscriptions());
+		ManagedEventStream<TestObject> stream = ManagedEventStream.strict();
+		Subscription subscription = stream.subscribe(new CustomSubscriber());
 
         stream.push(new TestObject("message"));
+		stream.pushError(new NullPointerException("This is a test Exception"));
 		stream.push(new TestObject2());
 		subscription.cancel();
+
 		try {
             stream.push(new TestObject("message"));
 		} catch (EmptySubscriberListException e) {
@@ -30,5 +29,28 @@ public class StreamTest {
             super("message");
         }
     }
+
+	private static final class CustomSubscriber implements Subscriber<TestObject> {
+
+		@Override
+		public void accept(TestObject testObject) {
+			System.out.println(testObject);
+		}
+
+		@Override
+		public void onCancel() {
+			System.out.println("[CustomSubscriber] canceled");
+		}
+
+		@Override
+		public void onSubscribe() {
+			System.out.println("[CustomSubscriber] just subscribed");
+		}
+
+		@Override
+		public void onError(Throwable throwable) {
+			System.out.println("[CustomSubscriber] " + throwable.getMessage());
+		}
+	}
 
 }

@@ -22,8 +22,8 @@ class NativeClientContainer implements ClientContainer {
 
 	private final Connection connection;
 	private final ConnectionContext connectionContext;
-	private final WritableEventStream<RemoteMessage> outStream = new SimpleEventStream<>();
-	private final WritableEventStream<Object> inStream = new SimpleEventStream<>();
+	private final ManagedEventStream<RemoteMessage> outStream = ManagedEventStream.sequential();
+	private final ManagedEventStream<Object> inStream = ManagedEventStream.sequential();
 	private final List<ClientContainer> connected = new ArrayList<>();
 	private final String address;
 	private final int port;
@@ -190,7 +190,7 @@ class NativeClientContainer implements ClientContainer {
 			String result = future.get();
 			if (!result.toLowerCase().equals("ok")) {
 				closeSilently();
-				throw new IllegalAccessError("Handshake failed!\n### Protocol-Start ###\n" + result + "### Protocol-End  ###");
+				throw new IllegalAccessError("Handshake failed!\n### Protocol-Start ###\n" + result + "\n### Protocol-End  ###");
 			}
 			connection.systemOutput().subscribe(this::handleSystemRequest);
 			connection.output().subscribe(this::handleReceive);

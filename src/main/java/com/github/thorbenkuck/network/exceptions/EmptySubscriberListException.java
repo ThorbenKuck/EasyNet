@@ -1,6 +1,6 @@
 package com.github.thorbenkuck.network.exceptions;
 
-public class EmptySubscriberListException extends RuntimeException {
+public class EmptySubscriberListException extends NetworkRuntimeException {
 
 	public EmptySubscriberListException() {
 	}
@@ -15,9 +15,5 @@ public class EmptySubscriberListException extends RuntimeException {
 
 	public EmptySubscriberListException(Throwable cause) {
 		super(cause);
-	}
-
-	public EmptySubscriberListException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
 	}
 }
