@@ -17,7 +17,11 @@ public interface EventStream<T> {
 
     Subscription subscribe(Subscriber<T> subscriber);
 
-    default Subscription connectTo(DataStream<? super T> eventStream) {
+    default Subscription endIn(Sink<? super T> sink) {
+        return subscribe(sink::push);
+    }
+
+    default Subscription branchTo(DataStream<? super T> eventStream) {
         return subscribe(eventStream::push);
     }
 

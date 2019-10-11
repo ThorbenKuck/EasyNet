@@ -19,6 +19,22 @@ public abstract class AbstractEventStream<T> implements ManagedEventStream<T> {
 
 	protected abstract void dispatch(List<NotifiableSubscription<T>> subscriptions, T t);
 
+	protected void newSubscription(NotifiableSubscription<T> subscription) {
+	}
+
+	protected void deletedSubscription(NotifiableSubscription<T> subscription) {
+	}
+
+	private void removeSubscription(NotifiableSubscription<T> subscription) {
+		subscriptions.remove(subscription);
+		deletedSubscription(subscription);
+	}
+
+	private void addSubscription(NotifiableSubscription<T> subscription) {
+		subscriptions.add(subscription);
+		newSubscription(subscription);
+	}
+
 	@Override
 	public void clearSubscribers() {
 		ArrayList<NotifiableSubscription<T>> notifiableSubscriptions = new ArrayList<>(subscriptions);
@@ -48,11 +64,11 @@ public abstract class AbstractEventStream<T> implements ManagedEventStream<T> {
 	public void close() {
 		List<NotifiableSubscription<? super T>> copy = new ArrayList<>(subscriptions);
 
-		copy.forEach(Subscription::cancel);
-		buffer.clear();
-		setDisabled(true);
 		pause();
+		setDisabled(true);
+		copy.forEach(Subscription::cancel);
 		subscriptions.clear();
+		buffer.clear();
 	}
 
 	@Override
@@ -76,7 +92,7 @@ public abstract class AbstractEventStream<T> implements ManagedEventStream<T> {
 	@Override
 	public Subscription subscribe(Subscriber<T> subscriber) {
 		NotifiableSubscription<T> subscription = new SimpleSubscription<>(subscriber, reference);
-		subscriptions.add(subscription);
+		addSubscription(subscription);
 		subscriber.onSubscribe();
 		return subscription;
 	}
@@ -105,7 +121,7 @@ public abstract class AbstractEventStream<T> implements ManagedEventStream<T> {
 
 		@Override
 		public void remove(NotifiableSubscription<T> subscription) {
-			subscriptions.remove(subscription);
+			removeSubscription(subscription);
 		}
 	}
 }

@@ -20,6 +20,33 @@ public interface ManagedEventStream<T> extends DataStream<T> {
         return new ParallelEventStream<>();
     }
 
+    static <T> ManagedEventStream<T> balanced() {
+        return new WorkLoadBalancingEventStream<>();
+    }
+    static <T> ManagedEventStream<T> sequential(Source<? extends T> source) {
+        ManagedEventStream<T> managedEventStream = sequential();
+        source.onEmit(managedEventStream::push);
+        return managedEventStream;
+    }
+
+    static <T> ManagedEventStream<T> strict(Source<? extends T> source) {
+        ManagedEventStream<T> managedEventStream = strict();
+        source.onEmit(managedEventStream::push);
+        return managedEventStream;
+    }
+
+    static <T> ManagedEventStream<T> parallel(Source<? extends T> source) {
+        ManagedEventStream<T> managedEventStream = parallel();
+        source.onEmit(managedEventStream::push);
+        return managedEventStream;
+    }
+
+    static <T> ManagedEventStream<T> balanced(Source<? extends T> source) {
+        ManagedEventStream<T> managedEventStream = balanced();
+        source.onEmit(managedEventStream::push);
+        return managedEventStream;
+    }
+
     List<NotifiableSubscription<T>> getSubscriptions();
 
     void clearSubscribers();
