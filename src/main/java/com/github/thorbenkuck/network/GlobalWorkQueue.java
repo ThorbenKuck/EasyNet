@@ -5,7 +5,7 @@ import com.github.thorbenkuck.network.utils.PropertyUtils;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class WorkQueue {
+public class GlobalWorkQueue {
 
     private static final LinkedBlockingQueue<Runnable> tasks = new LinkedBlockingQueue<>();
     private static final ExecutorService threadPool = ThreadPools.newDaemonThreadPool();

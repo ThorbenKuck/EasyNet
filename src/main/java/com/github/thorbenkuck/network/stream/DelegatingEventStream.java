@@ -1,6 +1,7 @@
 package com.github.thorbenkuck.network.stream;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class DelegatingEventStream<T> implements ManagedEventStream<T> {
 
@@ -58,6 +59,11 @@ public class DelegatingEventStream<T> implements ManagedEventStream<T> {
     @Override
     public Subscription subscribe(Subscriber<T> subscriber) {
         return delegate.subscribe(subscriber);
+    }
+
+    @Override
+    public <S> EventStream<S> pipe(Transformation<T, S> transformation, Supplier<DataStream<S>> eventStreamFunction) {
+        return delegate.pipe(transformation, eventStreamFunction);
     }
 
     @Override

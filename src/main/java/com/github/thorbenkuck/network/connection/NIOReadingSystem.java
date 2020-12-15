@@ -1,7 +1,7 @@
 package com.github.thorbenkuck.network.connection;
 
+import com.github.thorbenkuck.network.GlobalWorkQueue;
 import com.github.thorbenkuck.network.ThreadPools;
-import com.github.thorbenkuck.network.WorkQueue;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -154,7 +154,7 @@ public class NIOReadingSystem {
                                         if (data.length == 0) {
                                             nonBlockingConnection.closeSilently();
                                         } else {
-                                            WorkQueue.append(() -> nonBlockingConnection.received(data));
+                                            GlobalWorkQueue.append(() -> nonBlockingConnection.received(data));
                                         }
                                     } catch (IOException e) {
                                         e.printStackTrace();

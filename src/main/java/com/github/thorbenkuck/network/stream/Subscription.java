@@ -4,6 +4,8 @@ import java.util.List;
 
 public interface Subscription {
 
+	Subscription onError(ExceptionalConsumer<Throwable> consumer);
+
 	boolean isCanceled();
 
 	void cancel();

@@ -4,6 +4,7 @@ import com.github.thorbenkuck.network.stream.DataStream;
 import com.github.thorbenkuck.network.stream.EventStream;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
@@ -11,23 +12,27 @@ import java.util.function.Consumer;
 
 public interface Connection {
 
-	static Connection wrap(Socket socket) throws IOException {
+    static Connection wrap(Socket socket) throws IOException {
         return new BlockingConnection(socket);
-	}
+    }
 
-	static Connection wrap(SocketChannel socketChannel) throws IOException {
-		return new NonBlockingConnection(socketChannel);
-	}
+    static Connection wrap(SocketChannel socketChannel) {
+        return new NonBlockingConnection(socketChannel);
+    }
 
-	void listen();
+    static Connection wrap(DatagramSocket datagramSocket) {
+        return new UdpConnection(datagramSocket);
+    }
 
-	Protocol getProtocol();
+    void listen();
 
-	void setProtocol(Protocol protocol);
+    Protocol getProtocol();
 
-	byte[] readFromProtocol() throws IOException;
+    void setProtocol(Protocol protocol);
 
-	void writeToProtocol(byte[] data) throws IOException;
+    byte[] readFromProtocol() throws IOException;
+
+    void writeToProtocol(byte[] data) throws IOException;
 
 	EventStream<byte[]> output();
 

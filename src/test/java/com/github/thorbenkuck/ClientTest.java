@@ -1,6 +1,7 @@
 package com.github.thorbenkuck;
 
 import com.github.thorbenkuck.network.client.ClientContainer;
+import com.github.thorbenkuck.network.stream.Subscription;
 import com.github.thorbenkuck.network.utils.StopWatch;
 
 import java.io.IOException;
@@ -31,20 +32,23 @@ public class ClientTest {
         try (ClientContainer main = ClientContainer.builder()
                 .blocking()
                 .build(ADDRESSES, PORT)) {
-            main.output().subscribe(o -> countDownLatch.countDown());
+            Subscription subscribeOne = main.output().subscribe(o -> countDownLatch.countDown());
             main.listen();
 
             ClientContainer sub = main.createSub();
-            sub.output().subscribe(o -> countDownLatch.countDown());
+            Subscription subscribeTwo = sub.output()
+                    .subscribe(o -> countDownLatch.countDown());
 
             main.input().push(new TestObject("Client1"));
             sub.input().push(new TestObject("Client2"));
 
             countDownLatch.await();
+
+            subscribeOne.cancel();
+            subscribeTwo.cancel();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
-
 
 }

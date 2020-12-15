@@ -21,8 +21,13 @@ public interface ManagedEventStream<T> extends DataStream<T> {
     }
 
     static <T> ManagedEventStream<T> balanced() {
-        return new WorkLoadBalancingEventStream<>();
+        return balanced(false);
     }
+
+    static <T> ManagedEventStream<T> balanced(boolean async) {
+        return new WorkLoadBalancingEventStream<>(async);
+    }
+
     static <T> ManagedEventStream<T> sequential(Source<? extends T> source) {
         ManagedEventStream<T> managedEventStream = sequential();
         source.onEmit(managedEventStream::push);
@@ -43,6 +48,12 @@ public interface ManagedEventStream<T> extends DataStream<T> {
 
     static <T> ManagedEventStream<T> balanced(Source<? extends T> source) {
         ManagedEventStream<T> managedEventStream = balanced();
+        source.onEmit(managedEventStream::push);
+        return managedEventStream;
+    }
+
+    static <T> ManagedEventStream<T> balanced(boolean async, Source<? extends T> source) {
+        ManagedEventStream<T> managedEventStream = balanced(async);
         source.onEmit(managedEventStream::push);
         return managedEventStream;
     }

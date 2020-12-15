@@ -26,18 +26,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 class NativeServerContainer implements ServerContainer {
 
-	private final ManagedEventStream<ConnectionContext> connected = ManagedEventStream.sequential();
-	private final ManagedEventStream<RemoteMessage> outStream = ManagedEventStream.sequential();
-	private final int port;
+    private final ManagedEventStream<ConnectionContext> connected = ManagedEventStream.sequential();
+    private final ManagedEventStream<RemoteMessage> outStream = ManagedEventStream.balanced(true);
+    private final int port;
     private final boolean exitOnError = PropertyUtils.exitOnError();
-	private final ServerConnectionFactory serverConnectionFactory;
-	private final AtomicBoolean accepting = new AtomicBoolean(false);
-	private final ExecutorService executorService = Executors.newCachedThreadPool();
-	private final Map<String, ConnectionContext> connectionMap = new HashMap<>();
-	private ObjectEncoder objectEncoder = new JavaObjectEncoder();
-	private ObjectDecoder objectDecoder = new JavaObjectDecoder();
+    private final ServerConnectionFactory serverConnectionFactory;
+    private final AtomicBoolean accepting = new AtomicBoolean(false);
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
+    private final Map<String, ConnectionContext> connectionMap = new HashMap<>();
+    private ObjectEncoder objectEncoder = new JavaObjectEncoder();
+    private ObjectDecoder objectDecoder = new JavaObjectDecoder();
 
-	NativeServerContainer(int port, ServerConnectionFactory serverConnectionFactory) throws IOException {
+    NativeServerContainer(int port, ServerConnectionFactory serverConnectionFactory) throws IOException {
 		this.port = port;
 		this.serverConnectionFactory = serverConnectionFactory;
 		serverConnectionFactory.listen(port);

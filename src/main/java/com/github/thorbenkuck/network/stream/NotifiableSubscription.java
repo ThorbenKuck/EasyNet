@@ -2,7 +2,9 @@ package com.github.thorbenkuck.network.stream;
 
 public interface NotifiableSubscription<T> extends Subscription {
 
-	void notify(T t);
+    NotifiableSubscription<T> onError(ExceptionalConsumer<Throwable> consumer);
+
+    void notify(T t);
 
     void notify(Throwable throwable);
 }

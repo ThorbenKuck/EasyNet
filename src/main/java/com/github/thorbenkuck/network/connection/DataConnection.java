@@ -1,26 +1,31 @@
 package com.github.thorbenkuck.network.connection;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 
 public interface DataConnection {
 
-	static DataConnection wrap(Socket socket) throws IOException {
-		return new SocketConnection(socket);
-	}
+    static DataConnection wrap(Socket socket) throws IOException {
+        return new SocketConnection(socket);
+    }
 
-	static DataConnection wrap(SocketChannel channel) throws IOException {
-		return new SocketChannelDataConnection(channel);
-	}
+    static DataConnection wrap(SocketChannel channel) {
+        return new SocketChannelDataConnection(channel);
+    }
 
-	byte[] read(int i) throws IOException;
+    static DataConnection wrap(DatagramSocket datagramSocket) {
+        return new DatagramSocketConnection(datagramSocket);
+    }
 
-	void write(byte[] data) throws IOException;
+    byte[] read(int i) throws IOException;
 
-	void flush() throws IOException;
+    void write(byte[] data) throws IOException;
 
-	void close() throws IOException;
+    void flush() throws IOException;
 
-	void closeSilent();
+    void close() throws IOException;
+
+    void closeSilent();
 }

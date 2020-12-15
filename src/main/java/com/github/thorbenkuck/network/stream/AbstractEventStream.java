@@ -3,6 +3,7 @@ package com.github.thorbenkuck.network.stream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 
 public abstract class AbstractEventStream<T> implements ManagedEventStream<T> {
 
@@ -95,6 +96,20 @@ public abstract class AbstractEventStream<T> implements ManagedEventStream<T> {
 		addSubscription(subscription);
 		subscriber.onSubscribe();
 		return subscription;
+	}
+
+	@Override
+	public <S> EventStream<S> pipe(Transformation<T, S> transformation, Supplier<DataStream<S>> eventStreamFunction) {
+		DataStream<S> eventStream = eventStreamFunction.get();
+		subscribe(t -> {
+			try {
+				S s = transformation.apply(t);
+				eventStream.push(s);
+			} catch (Exception e) {
+				eventStream.pushError(e);
+			}
+		});
+		return eventStream;
 	}
 
 	@Override
