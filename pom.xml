@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.thorbenkuck</groupId>
     <artifactId>easy-net</artifactId>
-    <version>0.3.4-SNAPSHOT</version>
+    <version>0.3.4</version>
     <packaging>jar</packaging>
     <name>EasyNet</name>
     <properties>
